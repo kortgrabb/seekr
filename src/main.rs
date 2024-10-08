@@ -1,22 +1,19 @@
-mod args;
-mod search;
+mod app;
+mod core;
 
-use args::parse_args;
-use std::time::Instant;
+use app::cli::parse_args;
+use core::search::{print_results, search_files};
 
 fn main() {
-    // Parse command line arguments to get the configuration.
-    let config = parse_args();
+    // Parse command line arguments to get pattern, files, and flags.
+    let (cli, flags) = parse_args();
 
-    // Start the timer to measure execution time.
-    let start = Instant::now();
+    let pattern = &cli.pattern;
+    let files = &cli.files;
 
-    // Execute the search based on whether parallel processing is enabled.
-    search::search_files(&config);
+    // Search for the pattern in the files.
+    let results = search_files(pattern, files, &flags);
 
-    // Calculate and print the duration of the search.
-    let duration = start.elapsed();
-    if config.verbosity == args::Verbosity::Verbose {
-        println!("\nTime taken: {:?}", duration);
-    }
+    // Print the search results.
+    print_results(&results, &flags);
 }
