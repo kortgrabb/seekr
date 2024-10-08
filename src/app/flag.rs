@@ -8,6 +8,7 @@ pub struct Flags {
     pub show_lines: bool,
     pub show_names: bool,
     pub ignore_case: bool,
+    pub invert_match: bool,
 }
 
 impl Flags {
@@ -42,7 +43,12 @@ impl Flags {
             Arg::new("names")
                 .short('n')
                 .long("names")
-                .help("Show the names of files with matches")
+                .help("Only show file names with matches")
+                .action(ArgAction::SetTrue),
+            Arg::new("invert-match")
+                .short('v')
+                .long("invert-match")
+                .help("Matches all lines that do not contain the pattern")
                 .action(ArgAction::SetTrue),
         ]
     }
@@ -56,6 +62,7 @@ impl Flags {
             show_lines: *matches.get_one::<bool>("lines").unwrap_or(&false),
             ignore_case: *matches.get_one::<bool>("ignore-case").unwrap_or(&false),
             show_names: *matches.get_one::<bool>("names").unwrap_or(&false),
+            invert_match: *matches.get_one::<bool>("invert-match").unwrap_or(&false),
         }
     }
 }
