@@ -16,9 +16,9 @@ pub struct SearchResult {
     pub matches: Vec<(usize, usize)>, // (start, end) positions of matches
 }
 
-pub fn search_files(pattern: &str, files: &[String], flags: &Flags) -> Vec<SearchResult> {
+pub fn search_files(needle: &str, files: &[String], flags: &Flags) -> Vec<SearchResult> {
     let files = get_all_files(files, flags);
-    let regex = create_regex(pattern, flags.ignore_case);
+    let regex = create_regex(needle, flags.ignore_case);
 
     // Iterate over files in either parallel or sequential mode. Then, flatten the results.
     if flags.parallel {
@@ -46,14 +46,14 @@ fn search_file(file: &str, regex: &Regex) -> Vec<SearchResult> {
         .collect()
 }
 
-// Create a regex pattern with the given flags.
-fn create_regex(pattern: &str, ignore_case: bool) -> Regex {
-    let pattern = if ignore_case {
-        format!("(?i){}", pattern)
+// Create a regex needle with the given flags.
+fn create_regex(needle: &str, ignore_case: bool) -> Regex {
+    let needle = if ignore_case {
+        format!("(?i){}", needle)
     } else {
-        pattern.to_string()
+        needle.to_string()
     };
-    Regex::new(&pattern).expect("Invalid regex pattern")
+    Regex::new(&needle).expect("Invalid regex pattern")
 }
 
 // Process a line of text, returning a SearchResult if the line contains a match.

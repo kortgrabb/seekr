@@ -4,18 +4,18 @@ use super::flag::Flags;
 
 #[derive(Debug)]
 pub struct Cli {
-    pub pattern: String,
+    pub needle: String,
     pub files: Vec<String>,
 }
 
 pub fn parse_args() -> (Cli, Flags) {
     let matches = Command::new("getme")
-        .version("1.0")
-        .author("Your Name")
+        .version("0.1.0")
+        .author("kortgrabb")
         .about("A Rust implementation of grep with parallel execution support")
         .arg(
-            Arg::new("pattern")
-                .help("The regex pattern to search for")
+            Arg::new("needle")
+                .help("The regex pattern to search for in the haystack")
                 .required(true)
                 .index(1),
         )
@@ -30,7 +30,7 @@ pub fn parse_args() -> (Cli, Flags) {
         .get_matches();
 
     // Extract pattern and files from matches.
-    let pattern = matches.get_one::<String>("pattern").unwrap().clone();
+    let needle = matches.get_one::<String>("needle").unwrap().clone();
 
     let files: Vec<String> = matches
         .get_many::<String>("files")
@@ -41,5 +41,5 @@ pub fn parse_args() -> (Cli, Flags) {
     // Extract flags from matches.
     let flags = Flags::from_matches(&matches);
 
-    (Cli { pattern, files }, flags)
+    (Cli { needle, files }, flags)
 }

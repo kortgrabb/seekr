@@ -8,11 +8,11 @@ fn main() {
     // Parse command line arguments to get pattern, files, and flags.
     let (cli, flags) = parse_args();
 
-    let pattern = &cli.pattern;
+    let needle = &cli.needle;
     let files = &cli.files;
 
     // Search for the pattern in the files.
-    let results = search_files(pattern, files, &flags);
+    let results = search_files(needle, files, &flags);
 
     // Print the search results.
     print_results(&results, &flags);

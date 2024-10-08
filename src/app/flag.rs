@@ -19,13 +19,6 @@ impl Flags {
                 .long("parallel")
                 .help("Enable parallel execution")
                 .action(ArgAction::SetTrue),
-            Arg::new("verbosity")
-                .short('v')
-                .long("verbosity")
-                .help("Verbosity level (quiet, normal, verbose)")
-                .default_value("quiet")
-                .value_parser(["quiet", "normal", "verbose"])
-                .value_name("level"),
             Arg::new("recursive")
                 .short('r')
                 .long("recursive")
@@ -49,7 +42,7 @@ impl Flags {
             Arg::new("names")
                 .short('n')
                 .long("names")
-                .help("Only show the names of files with matches")
+                .help("Show the names of files with matches")
                 .action(ArgAction::SetTrue),
         ]
     }
