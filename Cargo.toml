@@ -1,0 +1,13 @@
+[package]
+name = "grep"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "4.5.18", features = ["derive"] }
+clap_derive = "4.5.18"
+rayon = "*"
+walkdir = "*"
+regex = "*"
+colored = "2.1.0"
+log = "0.4.22"
