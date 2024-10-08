@@ -38,6 +38,7 @@ fn search_file(file: &str, regex: &Regex) -> Vec<SearchResult> {
     let file_handle = File::open(file).expect("Failed to open file");
     let reader = io::BufReader::new(file_handle);
 
+    // Enumerate lines to get line numbers, then filter and process each line.
     reader
         .lines()
         .enumerate()
@@ -45,6 +46,7 @@ fn search_file(file: &str, regex: &Regex) -> Vec<SearchResult> {
         .collect()
 }
 
+// Create a regex pattern with the given flags.
 fn create_regex(pattern: &str, ignore_case: bool) -> Regex {
     let pattern = if ignore_case {
         format!("(?i){}", pattern)
@@ -54,6 +56,7 @@ fn create_regex(pattern: &str, ignore_case: bool) -> Regex {
     Regex::new(&pattern).expect("Invalid regex pattern")
 }
 
+// Process a line of text, returning a SearchResult if the line contains a match.
 fn process_line(
     file: &str,
     line_number: usize,
@@ -66,6 +69,7 @@ fn process_line(
             .map(|m| (m.start(), m.end()))
             .collect();
 
+        // Return a SearchResult if there are matches, otherwise None.
         if !matches.is_empty() {
             Some(SearchResult {
                 file: file.to_string(),
@@ -79,6 +83,7 @@ fn process_line(
     })
 }
 
+// Get all files from a list of paths, filtering out directories and non-existent files.
 fn get_all_files(provided: &[String], flags: &Flags) -> Vec<String> {
     provided
         .iter()
@@ -86,6 +91,7 @@ fn get_all_files(provided: &[String], flags: &Flags) -> Vec<String> {
         .collect()
 }
 
+// Get files from a path, filtering out directories and non-existent files.
 fn get_files_from_path(path_name: &str, flags: &Flags) -> Vec<String> {
     let path = Path::new(path_name);
     if path.is_dir() {
@@ -106,36 +112,43 @@ fn get_files_from_path(path_name: &str, flags: &Flags) -> Vec<String> {
     }
 }
 
+// Print search results based on the flags provided.
 pub fn print_results(results: &[SearchResult], flags: &Flags) {
     if flags.count {
-        print_count_results(results);
+        print_count_results(results, flags);
     } else {
         print_match_results(results, flags);
     }
 }
 
-fn print_count_results(results: &[SearchResult]) {
-    let file_counts: HashMap<_, _> =
-        results
-            .iter()
-            .map(|r| &r.file)
-            .fold(HashMap::new(), |mut acc, file| {
-                *acc.entry(file).or_insert(0) += 1;
-                acc
-            });
+// Print the count of matches per file.
+fn print_count_results(results: &[SearchResult], flags: &Flags) {
+    // Use fold to accumulate counts into a HashMap
+    let file_counts = results.iter().fold(HashMap::new(), |mut acc, res| {
+        *acc.entry(&res.file).or_insert(0) += 1;
+        acc
+    });
 
-    for (file, count) in file_counts {
-        println!("{}: {}", file, count);
+    if flags.show_names {
+        for (file, count) in file_counts {
+            println!("{}", format_count_result(file, count, flags));
+        }
+    } else {
+        let total_count: usize = file_counts.values().sum();
+        println!("total matches: {}", total_count);
     }
 }
 
+// Print the match results based on the flags provided.
 fn print_match_results(results: &[SearchResult], flags: &Flags) {
     for result in results {
-        println!("{}", format_result(result, flags));
+        // Print the formatted result based on the flags.
+        println!("{}", format_match_result(result, flags));
     }
 }
 
-fn format_result(result: &SearchResult, flags: &Flags) -> String {
+// Format a SearchResult based on the flags provided.
+fn format_match_result(result: &SearchResult, flags: &Flags) -> String {
     let mut output = String::new();
 
     if flags.show_names {
@@ -149,14 +162,31 @@ fn format_result(result: &SearchResult, flags: &Flags) -> String {
     output
 }
 
+// Format the count result for a file.
+fn format_count_result(file: &str, count: usize, flags: &Flags) -> String {
+    let mut output = String::new();
+
+    if flags.show_names {
+        output.push_str(&format!("{}:", file));
+    }
+
+    output.push_str(&format!(" {}", count));
+    output
+}
+
+// Highlight matches in a line of text.
 fn highlight_matches(line: &str, matches: &[(usize, usize)]) -> String {
     let mut highlighted = String::new();
     let mut last_end = 0;
     for &(start, end) in matches {
+        // Append the text that is before the match.
         highlighted.push_str(&line[last_end..start]);
-        highlighted.push_str(&line[start..end].cyan().to_string());
+        // Append the match itself, highlighted in red.
+        highlighted.push_str(&line[start..end].red().to_string());
+        // Update the last end position.
         last_end = end;
     }
+    // Append the text that is after the last match.
     highlighted.push_str(&line[last_end..]);
     highlighted
 }
