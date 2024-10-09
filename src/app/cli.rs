@@ -1,4 +1,4 @@
-use clap::{Arg, Command};
+use clap::{Arg, ArgGroup, Command};
 
 use super::flag::Flags;
 
@@ -26,19 +26,23 @@ pub fn parse_args() -> (Cli, Flags) {
                 .action(clap::ArgAction::Append)
                 .index(2),
         )
-        .args(Flags::args()) // Include flags from the Flags struct.
+        .args(Flags::args())
+        .group(
+            ArgGroup::new("output_control")
+                .args(&["count", "names"])
+                .multiple(false)
+                .required(false),
+        )
         .get_matches();
 
     // Extract pattern and files from matches.
-    let needle = match matches.get_one::<String>("needle") {
-        Some(needle) => needle.to_string(),
-        None => panic!("No needle provided"),
-    };
+    let needle = matches.get_one::<String>("needle").unwrap().to_string();
 
     let files = matches
         .get_many::<String>("files")
-        .map(|values| values.map(|s| s.to_string()).collect())
-        .unwrap_or_default();
+        .unwrap()
+        .map(|s| s.to_string())
+        .collect();
 
     // Extract flags from matches.
     let flags = Flags::from_matches(&matches);

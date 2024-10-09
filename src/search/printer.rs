@@ -51,12 +51,14 @@ pub fn format_match_result(result: &SearchResult, flags: &Flags) -> String {
 
     // Include the file name if the flag is set
     if flags.show_names {
-        write!(&mut output, "{}:", result.file).unwrap();
+        println!("{}", result.file.green());
     }
     // Include the line number if the flag is set
     if flags.show_lines {
-        write!(&mut output, "{}:", result.line_number).unwrap();
+        write!(&mut output, "{}:", result.line_number.to_string().cyan()).unwrap();
     }
+
+    // TODO: add seperator if flag is set
 
     // Highlight the matches in the line content
     output.push_str(&highlight_matches(&result.line_content, &result.matches));
