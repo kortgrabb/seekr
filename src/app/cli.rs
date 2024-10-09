@@ -27,12 +27,6 @@ pub fn parse_args() -> (Cli, Flags) {
                 .index(2),
         )
         .args(Flags::args())
-        .group(
-            ArgGroup::new("output_control")
-                .args(&["count", "names"])
-                .multiple(false)
-                .required(false),
-        )
         .get_matches();
 
     // Extract pattern and files from matches.

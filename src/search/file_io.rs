@@ -1,5 +1,5 @@
 use crate::app::flag::Flags;
-use ignore::{Walk, WalkBuilder};
+use ignore::WalkBuilder;
 use std::io;
 use std::path::{Path, PathBuf};
 
@@ -39,6 +39,7 @@ pub fn get_files_from_directory(path: &Path, flags: &Flags) -> Result<Vec<PathBu
     if !flags.recursive {
         builder.max_depth(Some(1)); // Limit the depth to 1 if not recursive
     }
+
     let files: Vec<_> = builder
         .hidden(!flags.hidden) // Enable ignoring hidden files if flag is set
         .build()
