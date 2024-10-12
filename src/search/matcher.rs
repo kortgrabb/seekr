@@ -7,6 +7,8 @@ use std::fs::File;
 use std::io::{self, BufRead, BufReader};
 use std::path::{Path, PathBuf};
 
+// TODO: add non-regex search if not needed
+
 // Create a regex pattern from the search string, handling case sensitivity
 pub fn create_regex(needle: &str, ignore_case: bool) -> Result<Regex, regex::Error> {
     // If case-insensitive search is requested, prepend the regex with "(?i)"
