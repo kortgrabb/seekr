@@ -38,10 +38,16 @@ pub fn print_count_results(results: &[SearchResult], flags: &Flags) {
 
 // Print detailed match results
 pub fn print_match_results(results: &[SearchResult], flags: &Flags) {
-    // Iterate through each SearchResult and print the formatted match result
-    for result in results {
-        println!("{}", format_match_result(result, flags));
-    }
+    // Collect the results into a formatted string
+    let formatted_results: Vec<String> = results
+        .iter()
+        .map(|res| format_match_result(res, flags))
+        .collect();
+
+    // Join the formatted results into a single string
+    let output = formatted_results.join("\n");
+
+    println!("{}", output);
 }
 
 // Format a match result for printing
@@ -51,14 +57,14 @@ pub fn format_match_result(result: &SearchResult, flags: &Flags) -> String {
 
     // Include the file name if the flag is set
     if flags.show_names {
-        println!("{}", result.file.green());
+        write!(&mut output, "{}\n", result.file.green()).unwrap();
     }
     // Include the line number if the flag is set
     if flags.show_lines {
         write!(&mut output, "{}:", result.line_number.to_string().cyan()).unwrap();
     }
 
-    // TODO: add seperator if flag is set
+    // TODO: add separator if flag is set
 
     // Highlight the matches in the line content
     output.push_str(&highlight_matches(&result.line_content, &result.matches));
