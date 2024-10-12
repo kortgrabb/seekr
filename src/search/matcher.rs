@@ -13,7 +13,7 @@ use std::path::{Path, PathBuf};
 pub fn create_regex(needle: &str, ignore_case: bool) -> Result<Regex, regex::Error> {
     // If case-insensitive search is requested, prepend the regex with "(?i)"
     let needle = if ignore_case {
-        format!("(?i){}", needle)
+        format!("(?i){needle}")
     } else {
         needle.to_owned()
     };

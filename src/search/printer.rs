@@ -2,7 +2,7 @@
 
 use crate::app::flag::Flags;
 use crate::search::result::SearchResult;
-use colored::*;
+use colored::Colorize;
 use std::collections::HashMap;
 
 // Print search results, either count or detailed matches
@@ -32,7 +32,7 @@ pub fn print_count_results(results: &[SearchResult], flags: &Flags) {
     } else {
         // Print the total count of matches
         let total_count: usize = file_counts.values().sum();
-        println!("{}", total_count);
+        println!("{total_count}");
     }
 }
 
@@ -48,7 +48,7 @@ pub fn print_match_results(results: &[SearchResult], flags: &Flags) {
         .collect::<Vec<_>>()
         .join("\n");
 
-    println!("{}", output);
+    println!("{output}");
 }
 
 // Format a match result for printing
@@ -74,7 +74,7 @@ pub fn format_match_result(result: &SearchResult, flags: &Flags) -> String {
 
 // Format the count result for printing
 pub fn format_count_result(file: &str, count: usize) -> String {
-    format!("{}: {}", file, count)
+    format!("{file}: {count}")
 }
 
 // Highlight matches in a line by coloring matched text in red

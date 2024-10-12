@@ -27,7 +27,7 @@ pub fn get_files_from_path(path_name: &str, flags: &Flags) -> Result<Vec<PathBuf
         // Return an error if the path is neither a file nor a directory
         Err(io::Error::new(
             io::ErrorKind::NotFound,
-            format!("'{}' is neither a file nor a directory.", path_name),
+            format!("'{path_name}' is neither a file nor a directory."),
         ))
     }
 }
@@ -43,7 +43,7 @@ pub fn get_files_from_directory(path: &Path, flags: &Flags) -> Result<Vec<PathBu
     let files: Vec<_> = builder
         .hidden(!flags.hidden) // Enable ignoring hidden files if flag is set
         .build()
-        .filter_map(|entry| entry.ok()) // Filter out any errors
+        .filter_map(std::result::Result::ok) // Filter out any errors
         .filter(|entry| entry.path().is_file()) // Filter out directories
         .map(|entry| entry.path().to_path_buf()) // Convert to PathBufs
         .collect();

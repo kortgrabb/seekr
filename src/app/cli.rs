@@ -35,7 +35,7 @@ pub fn parse_args() -> (Cli, Flags) {
     let files = matches
         .get_many::<String>("files")
         .unwrap()
-        .map(|s| s.to_string())
+        .map(std::string::ToString::to_string)
         .collect();
 
     // Extract flags from matches.
