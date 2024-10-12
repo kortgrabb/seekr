@@ -38,14 +38,15 @@ pub fn print_count_results(results: &[SearchResult], flags: &Flags) {
 
 // Print detailed match results
 pub fn print_match_results(results: &[SearchResult], flags: &Flags) {
-    // Collect the results into a formatted string
-    let formatted_results: Vec<String> = results
+    if results.is_empty() {
+        return;
+    }
+
+    let output = results
         .iter()
         .map(|res| format_match_result(res, flags))
-        .collect();
-
-    // Join the formatted results into a single string
-    let output = formatted_results.join("\n");
+        .collect::<Vec<_>>()
+        .join("\n");
 
     println!("{}", output);
 }
