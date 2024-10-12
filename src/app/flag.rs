@@ -1,15 +1,30 @@
 use clap::{Arg, ArgAction, ArgMatches};
 
+// allw more than 3 boolean flags clippy
+
 #[derive(Debug, Default)]
 pub struct Flags {
-    pub parallel: bool,
-    pub recursive: bool,
-    pub count: bool,
-    pub show_lines: bool,
-    pub show_names: bool,
-    pub ignore_case: bool,
-    pub invert_match: bool,
-    pub hidden: bool,
+    pub parallel: OptionState,
+    pub recursive: OptionState,
+    pub count: OptionState,
+    pub show_lines: OptionState,
+    pub show_names: OptionState,
+    pub ignore_case: OptionState,
+    pub invert_match: OptionState,
+    pub hidden: OptionState,
+}
+
+#[derive(Debug, Default)]
+pub enum OptionState {
+    #[default]
+    Disabled,
+    Enabled,
+}
+
+impl OptionState {
+    pub fn is_enabled(&self) -> bool {
+        matches!(self, Self::Enabled)
+    }
 }
 
 macro_rules! flag {
@@ -45,22 +60,59 @@ impl Flags {
                 "invert-match",
                 'v',
                 "invert-match",
-                "Matches all lines that do not contain the pattern"
+                "Invert match to select non-matching lines"
             ),
-            flag!("hidden", 'H', "hidden", "Include hidden files in search"),
+            flag!(
+                "hidden",
+                'h',
+                "hidden",
+                "Search hidden files and directories"
+            ),
         ]
     }
 
     pub fn from_matches(matches: &ArgMatches) -> Self {
         Self {
-            parallel: matches.get_flag("parallel"),
-            recursive: matches.get_flag("recursive"),
-            count: matches.get_flag("count"),
-            show_lines: matches.get_flag("lines"),
-            ignore_case: matches.get_flag("ignore-case"),
-            show_names: matches.get_flag("names"),
-            invert_match: matches.get_flag("invert-match"),
-            hidden: matches.get_flag("hidden"),
+            parallel: if matches.get_flag("parallel") {
+                OptionState::Enabled
+            } else {
+                OptionState::Disabled
+            },
+            recursive: if matches.get_flag("recursive") {
+                OptionState::Enabled
+            } else {
+                OptionState::Disabled
+            },
+            count: if matches.get_flag("count") {
+                OptionState::Enabled
+            } else {
+                OptionState::Disabled
+            },
+            show_lines: if matches.get_flag("lines") {
+                OptionState::Enabled
+            } else {
+                OptionState::Disabled
+            },
+            ignore_case: if matches.get_flag("ignore-case") {
+                OptionState::Enabled
+            } else {
+                OptionState::Disabled
+            },
+            show_names: if matches.get_flag("names") {
+                OptionState::Enabled
+            } else {
+                OptionState::Disabled
+            },
+            invert_match: if matches.get_flag("invert-match") {
+                OptionState::Enabled
+            } else {
+                OptionState::Disabled
+            },
+            hidden: if matches.get_flag("hidden") {
+                OptionState::Enabled
+            } else {
+                OptionState::Disabled
+            },
         }
     }
 }

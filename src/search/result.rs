@@ -1,12 +1,12 @@
 #[derive(Debug)]
-pub struct SearchResult {
+pub struct SearchMatch {
     pub file: String,                 // Name of the file containing the line
     pub line_number: usize,           // Line number in the file
     pub line_content: String,         // Content of the line
     pub matches: Vec<(usize, usize)>, // (start, end) positions of matches           // Indicates if this is an inverted match
 }
 
-impl SearchResult {
+impl SearchMatch {
     // Updated constructor to include `is_inverted`
     pub fn new(
         file: &str,

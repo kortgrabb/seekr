@@ -1,6 +1,6 @@
 use crate::app::flag::Flags;
 use crate::search::file_io::get_all_files;
-use crate::search::result::SearchResult;
+use crate::search::result::SearchMatch;
 use rayon::prelude::*;
 use regex::Regex;
 use std::fs::File;
@@ -25,15 +25,15 @@ pub fn search_files(
     needle: &str,
     files: &[String],
     flags: &Flags,
-) -> Result<Vec<SearchResult>, io::Error> {
+) -> Result<Vec<SearchMatch>, io::Error> {
     // Get all files to be searched
     let files = get_all_files(files, flags)?;
     // Create a regex pattern, considering case sensitivity
-    let regex = create_regex(needle, flags.ignore_case)
+    let regex = create_regex(needle, flags.ignore_case.is_enabled())
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
 
     // Choose between parallel or sequential file searching based on the flag
-    if flags.parallel {
+    if flags.parallel.is_enabled() {
         search_files_parallel(&files, &regex, flags)
     } else {
         search_files_sequential(&files, &regex, flags)
@@ -45,7 +45,7 @@ pub fn search_files_parallel(
     files: &[PathBuf],
     regex: &Regex,
     flags: &Flags,
-) -> Result<Vec<SearchResult>, io::Error> {
+) -> Result<Vec<SearchMatch>, io::Error> {
     // Use Rayon to search files in parallel, which can speed up the search for large file sets
     let results: Result<Vec<_>, _> = files
         .par_iter()
@@ -59,7 +59,7 @@ pub fn search_files_sequential(
     files: &[PathBuf],
     regex: &Regex,
     flags: &Flags,
-) -> Result<Vec<SearchResult>, io::Error> {
+) -> Result<Vec<SearchMatch>, io::Error> {
     let mut results = Vec::new();
     // Iterate through each file and search for matches
     for file in files {
@@ -73,16 +73,22 @@ pub fn search_file(
     file: &Path,
     regex: &Regex,
     flags: &Flags,
-) -> Result<Vec<SearchResult>, io::Error> {
+) -> Result<Vec<SearchMatch>, io::Error> {
     // Open the file for reading
     let file_handle = File::open(file)?;
     let reader = BufReader::new(file_handle);
 
-    let mut results: Vec<SearchResult> = Vec::new();
+    let mut results: Vec<SearchMatch> = Vec::new();
     // Iterate through each line in the file
     for (line_number, line) in reader.lines().enumerate() {
         // Process each line to find matches
-        let line = process_line(file, line_number, line, regex, flags.invert_match)?;
+        let line = process_line(
+            file,
+            line_number,
+            line,
+            regex,
+            flags.invert_match.is_enabled(),
+        )?;
         if let Some(result) = line {
             results.push(result);
         }
@@ -112,13 +118,9 @@ pub fn process_line(
     line: io::Result<String>,
     regex: &Regex,
     invert_match: bool,
-) -> Result<Option<SearchResult>, io::Error> {
-    let line_content = match line {
-        Ok(content) => content,
-        Err(_) => {
-            return Ok(None); // Skip the line if there's an error reading it
-        }
-    };
+) -> Result<Option<SearchMatch>, io::Error> {
+    // Unwrap the line content from the Result
+    let line_content = line?;
 
     // Find matches in the line content using the regex
     let matches: Vec<_> = regex.find_iter(&line_content).collect();
@@ -126,7 +128,7 @@ pub fn process_line(
     if invert_match {
         if matches.is_empty() {
             // Line does NOT match the regex; it's a match for inverted search
-            Ok(Some(SearchResult::new(
+            Ok(Some(SearchMatch::new(
                 file.to_string_lossy().as_ref(),
                 line_number + 1, // Line numbers are 1-based
                 line_content,
@@ -142,7 +144,7 @@ pub fn process_line(
             .iter()
             .map(|m| (m.start(), m.end()))
             .collect::<Vec<(usize, usize)>>();
-        Ok(Some(SearchResult::new(
+        Ok(Some(SearchMatch::new(
             file.to_string_lossy().as_ref(),
             line_number + 1, // Line numbers are 1-based
             line_content,

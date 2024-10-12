@@ -19,7 +19,7 @@ pub fn get_files_from_path(path_name: &str, flags: &Flags) -> Result<Vec<PathBuf
     let path = Path::new(path_name);
     if path.is_dir() {
         // If the path is a directory, get all files from the directory
-        get_files_from_directory(path, flags)
+        Ok(get_files_from_directory(path, flags))
     } else if path.is_file() {
         // If the path is a file, return it as a PathBuf
         Ok(vec![path.to_path_buf()])
@@ -33,20 +33,20 @@ pub fn get_files_from_path(path_name: &str, flags: &Flags) -> Result<Vec<PathBuf
 }
 
 // Get files from a directory, considering the recursive flag
-pub fn get_files_from_directory(path: &Path, flags: &Flags) -> Result<Vec<PathBuf>, io::Error> {
+pub fn get_files_from_directory(path: &Path, flags: &Flags) -> Vec<PathBuf> {
     // Use WalkBuilder to traverse the directory
     let mut builder = WalkBuilder::new(path);
-    if !flags.recursive {
+    if !flags.recursive.is_enabled() {
         builder.max_depth(Some(1)); // Limit the depth to 1 if not recursive
     }
 
     let files: Vec<_> = builder
-        .hidden(!flags.hidden) // Enable ignoring hidden files if flag is set
+        .hidden(!flags.hidden.is_enabled()) // Enable ignoring hidden files if flag is set
         .build()
         .filter_map(std::result::Result::ok) // Filter out any errors
         .filter(|entry| entry.path().is_file()) // Filter out directories
         .map(|entry| entry.path().to_path_buf()) // Convert to PathBufs
         .collect();
 
-    Ok(files)
+    files
 }

@@ -1,13 +1,14 @@
 // src/search/printer.rs
 
 use crate::app::flag::Flags;
-use crate::search::result::SearchResult;
+use crate::search::result::SearchMatch;
 use colored::Colorize;
 use std::collections::HashMap;
+use std::fmt::Write;
 
 // Print search results, either count or detailed matches
-pub fn print_results(results: &[SearchResult], flags: &Flags) {
-    if flags.count {
+pub fn print_results(results: &[SearchMatch], flags: &Flags) {
+    if flags.count.is_enabled() {
         // Print the count of matches per file
         print_count_results(results, flags);
     } else {
@@ -17,14 +18,14 @@ pub fn print_results(results: &[SearchResult], flags: &Flags) {
 }
 
 // Print the count of matches per file
-pub fn print_count_results(results: &[SearchResult], flags: &Flags) {
+pub fn print_count_results(results: &[SearchMatch], flags: &Flags) {
     // Create a HashMap to store counts of matches per file
     let file_counts = results.iter().fold(HashMap::new(), |mut acc, res| {
         *acc.entry(&res.file).or_insert(0) += 1;
         acc
     });
 
-    if flags.show_names {
+    if flags.show_names.is_enabled() {
         // Print the count for each file if file names should be shown
         for (file, count) in file_counts {
             println!("{}", format_count_result(file, count));
@@ -37,7 +38,7 @@ pub fn print_count_results(results: &[SearchResult], flags: &Flags) {
 }
 
 // Print detailed match results
-pub fn print_match_results(results: &[SearchResult], flags: &Flags) {
+pub fn print_match_results(results: &[SearchMatch], flags: &Flags) {
     if results.is_empty() {
         return;
     }
@@ -52,16 +53,15 @@ pub fn print_match_results(results: &[SearchResult], flags: &Flags) {
 }
 
 // Format a match result for printing
-pub fn format_match_result(result: &SearchResult, flags: &Flags) -> String {
+pub fn format_match_result(result: &SearchMatch, flags: &Flags) -> String {
     let mut output = String::new();
-    use std::fmt::Write;
 
     // Include the file name if the flag is set
-    if flags.show_names {
+    if flags.show_names.is_enabled() {
         writeln!(&mut output, "{}", result.file.green()).unwrap();
     }
     // Include the line number if the flag is set
-    if flags.show_lines {
+    if flags.show_lines.is_enabled() {
         write!(&mut output, "{}:", result.line_number.to_string().cyan()).unwrap();
     }
 
@@ -83,11 +83,14 @@ pub fn highlight_matches(line: &str, matches: &[(usize, usize)]) -> String {
     let mut last_end = 0;
 
     // Iterate through each match and append highlighted text
-    for &(start, end) in matches {
-        highlighted.push_str(&line[last_end..start]); // Append text before the match
-        highlighted.push_str(&line[start..end].red().to_string()); // Append the matched text in red
-        last_end = end;
+    for (start, end) in matches {
+        // Append the text before the match
+        highlighted.push_str(&line[last_end..*start]);
+        // Append the matched text in red
+        highlighted.push_str(&line[*start..*end].red().to_string());
+        last_end = *end;
     }
+
     highlighted.push_str(&line[last_end..]); // Append the remaining text
     highlighted
 }
