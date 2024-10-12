@@ -58,7 +58,7 @@ pub fn format_match_result(result: &SearchResult, flags: &Flags) -> String {
 
     // Include the file name if the flag is set
     if flags.show_names {
-        write!(&mut output, "{}\n", result.file.green()).unwrap();
+        writeln!(&mut output, "{}", result.file.green()).unwrap();
     }
     // Include the line number if the flag is set
     if flags.show_lines {
