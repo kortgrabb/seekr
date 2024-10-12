@@ -94,3 +94,129 @@ pub fn highlight_matches(line: &str, matches: &[(usize, usize)]) -> String {
     highlighted.push_str(&line[last_end..]); // Append the remaining text
     highlighted
 }
+#[cfg(test)]
+mod tests {
+    use crate::app::flag::OptionState;
+
+    use super::*;
+
+    #[test]
+    fn test_print_count_results_with_file_names() {
+        let results = vec![
+            SearchMatch {
+                file: "file1.txt".to_string(),
+                line_number: 1,
+                line_content: "This is a test".to_string(),
+                matches: vec![(0, 4)],
+            },
+            SearchMatch {
+                file: "file2.txt".to_string(),
+                line_number: 2,
+                line_content: "Another test".to_string(),
+                matches: vec![(8, 12)],
+            },
+            SearchMatch {
+                file: "file1.txt".to_string(),
+                line_number: 3,
+                line_content: "Test again".to_string(),
+                matches: vec![(0, 4)],
+            },
+        ];
+
+        let flags = Flags {
+            count: OptionState::Enabled,
+            show_names: OptionState::Enabled,
+            show_lines: OptionState::Disabled,
+            ..Default::default()
+        };
+
+        print_count_results(&results, &flags);
+    }
+
+    #[test]
+    fn test_print_count_results_without_file_names() {
+        let results = vec![
+            SearchMatch {
+                file: "file1.txt".to_string(),
+                line_number: 1,
+                line_content: "This is a test".to_string(),
+                matches: vec![(0, 4)],
+            },
+            SearchMatch {
+                file: "file2.txt".to_string(),
+                line_number: 2,
+                line_content: "Another test".to_string(),
+                matches: vec![(8, 12)],
+            },
+            SearchMatch {
+                file: "file1.txt".to_string(),
+                line_number: 3,
+                line_content: "Test again".to_string(),
+                matches: vec![(0, 4)],
+            },
+        ];
+
+        let flags = Flags {
+            count: OptionState::Enabled,
+            show_names: OptionState::Disabled,
+            show_lines: OptionState::Disabled,
+            ..Default::default()
+        };
+
+        print_count_results(&results, &flags);
+    }
+
+    #[test]
+    fn test_print_match_results_with_file_names_and_lines() {
+        let results = vec![
+            SearchMatch {
+                file: "file1.txt".to_string(),
+                line_number: 1,
+                line_content: "This is a test".to_string(),
+                matches: vec![(0, 4)],
+            },
+            SearchMatch {
+                file: "file2.txt".to_string(),
+                line_number: 2,
+                line_content: "Another test".to_string(),
+                matches: vec![(8, 12)],
+            },
+        ];
+
+        let flags = Flags {
+            count: OptionState::Disabled,
+            show_names: OptionState::Enabled,
+            show_lines: OptionState::Enabled,
+            ..Default::default()
+        };
+
+        print_match_results(&results, &flags);
+    }
+
+    #[test]
+    fn test_print_match_results_without_file_names_and_lines() {
+        let results = vec![
+            SearchMatch {
+                file: "file1.txt".to_string(),
+                line_number: 1,
+                line_content: "This is a test".to_string(),
+                matches: vec![(0, 4)],
+            },
+            SearchMatch {
+                file: "file2.txt".to_string(),
+                line_number: 2,
+                line_content: "Another test".to_string(),
+                matches: vec![(8, 12)],
+            },
+        ];
+
+        let flags = Flags {
+            count: OptionState::Disabled,
+            show_names: OptionState::Disabled,
+            show_lines: OptionState::Disabled,
+            ..Default::default()
+        };
+
+        print_match_results(&results, &flags);
+    }
+}

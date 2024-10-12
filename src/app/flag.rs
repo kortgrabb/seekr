@@ -25,6 +25,14 @@ impl OptionState {
     pub fn is_enabled(&self) -> bool {
         matches!(self, Self::Enabled)
     }
+
+    pub fn set_enabled(&mut self, enabled: bool) {
+        *self = if enabled {
+            Self::Enabled
+        } else {
+            Self::Disabled
+        }
+    }
 }
 
 macro_rules! flag {
@@ -64,7 +72,7 @@ impl Flags {
             ),
             flag!(
                 "hidden",
-                'h',
+                'H',
                 "hidden",
                 "Search hidden files and directories"
             ),

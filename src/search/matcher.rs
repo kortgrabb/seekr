@@ -5,7 +5,8 @@ use rayon::prelude::*;
 use regex::Regex;
 use std::fs::File;
 use std::io::{self, BufRead, BufReader};
-use std::path::{Path, PathBuf};
+use std::path::Path;
+use std::path::PathBuf;
 
 // TODO: add non-regex search if not needed
 
@@ -96,22 +97,6 @@ pub fn search_file(
 
     Ok(results)
 }
-
-/// Processes a single line from a file to determine if it matches (or does not match) the given regex.
-///
-/// # Arguments
-///
-/// * `file` - The path to the file being processed.
-/// * `line_number` - The current line number in the file.
-/// * `line` - The content of the line, wrapped in an `io::Result`.
-/// * `regex` - The compiled regular expression to match against.
-/// * `invert_match` - If `true`, lines that do NOT match the regex are considered matches.
-///
-/// # Returns
-///
-/// * `Ok(Some(SearchResult))` if the line is a match based on `invert_match`.
-/// * `Ok(None)` if the line is not a match.
-/// * `Err(io::Error)` if an I/O error occurs while reading the line.
 pub fn process_line(
     file: &Path,
     line_number: usize,
@@ -153,5 +138,83 @@ pub fn process_line(
     } else {
         // Line does not match the regex; skip it
         Ok(None)
+    }
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs::{self, File};
+    use std::io::Write;
+    use std::path::PathBuf;
+
+    // test_file.txt: "This is a test line.\nAnother test line."
+
+    fn create_test_file(content: &str) -> PathBuf {
+        let file_path = PathBuf::from("test_file.txt");
+        let mut file = File::create(&file_path).unwrap();
+        writeln!(file, "{content}").unwrap();
+        file_path
+    }
+
+    #[test]
+    fn test_create_regex_case_sensitive() {
+        let regex = create_regex("test", false).unwrap();
+        assert!(regex.is_match("test"));
+        assert!(!regex.is_match("TEST"));
+    }
+
+    #[test]
+    fn test_create_regex_case_insensitive() {
+        let regex = create_regex("test", true).unwrap();
+        assert!(regex.is_match("test"));
+        assert!(regex.is_match("TEST"));
+    }
+
+    #[test]
+    fn test_search_file() {
+        let file_path = create_test_file("This is a test line.\nAnother test line.");
+        let regex = create_regex("test", false).unwrap();
+        let flags = Flags::default();
+        let matches = search_file(&file_path, &regex, &flags).unwrap();
+        assert_eq!(matches.len(), 2);
+        fs::remove_file(file_path).unwrap();
+    }
+
+    #[test]
+    fn test_search_file_invert_match() {
+        let file_path = create_test_file("This is a test line.\nAnother test line.");
+        let regex = create_regex("test", false).unwrap();
+        let mut flags = Flags::default();
+        flags.invert_match.set_enabled(true);
+        let matches = search_file(&file_path, &regex, &flags).unwrap();
+        assert_eq!(matches.len(), 0);
+        fs::remove_file(file_path).unwrap();
+    }
+
+    #[test]
+    fn test_process_line_match() {
+        let file_path = PathBuf::from("test_file.txt");
+        let regex = create_regex("test", false).unwrap();
+        let line = Ok("This is a test line.".to_string());
+        let result = process_line(&file_path, 0, line, &regex, false).unwrap();
+        assert!(result.is_some());
+    }
+
+    #[test]
+    fn test_process_line_no_match() {
+        let file_path = PathBuf::from("test_file.txt");
+        let regex = create_regex("test", false).unwrap();
+        let line = Ok("This is a line.".to_string());
+        let result = process_line(&file_path, 0, line, &regex, false).unwrap();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_process_line_invert_match() {
+        let file_path = PathBuf::from("test_file.txt");
+        let regex = create_regex("test", false).unwrap();
+        let line = Ok("This is a line.".to_string());
+        let result = process_line(&file_path, 0, line, &regex, true).unwrap();
+        assert!(result.is_some());
     }
 }

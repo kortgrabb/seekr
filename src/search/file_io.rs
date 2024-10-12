@@ -1,6 +1,6 @@
 use crate::app::flag::Flags;
 use ignore::WalkBuilder;
-use std::io;
+use std::io::{self};
 use std::path::{Path, PathBuf};
 
 // Get all files from a list of provided paths
@@ -49,4 +49,90 @@ pub fn get_files_from_directory(path: &Path, flags: &Flags) -> Vec<PathBuf> {
         .collect();
 
     files
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs::{self, File};
+    use std::io::Write;
+    use tempfile::tempdir;
+
+    #[test]
+    fn test_get_files_from_path_with_file() {
+        let dir = tempdir().unwrap();
+        let file_path = dir.path().join("test_file.txt");
+        let mut file = File::create(&file_path).unwrap();
+        writeln!(file, "Hello, world!").unwrap();
+
+        let flags = Flags::default();
+        let result = get_files_from_path(file_path.to_str().unwrap(), &flags).unwrap();
+        assert_eq!(result, vec![file_path]);
+    }
+
+    #[test]
+    fn test_get_files_from_path_with_directory() {
+        let dir = tempdir().unwrap();
+        let file_path = dir.path().join("test_file.txt");
+        let mut file = File::create(&file_path).unwrap();
+        writeln!(file, "Hello, world!").unwrap();
+
+        let flags = Flags::default();
+        let result = get_files_from_path(dir.path().to_str().unwrap(), &flags).unwrap();
+        assert_eq!(result, vec![file_path]);
+    }
+
+    #[test]
+    fn test_get_files_from_path_with_nonexistent_path() {
+        let flags = Flags::default();
+        let result = get_files_from_path("nonexistent_path", &flags);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_get_all_files() {
+        let dir = tempdir().unwrap();
+        let file_path1 = dir.path().join("test_file1.txt");
+        let mut file1 = File::create(&file_path1).unwrap();
+        writeln!(file1, "Hello, world!").unwrap();
+
+        let file_path2 = dir.path().join("test_file2.txt");
+        let mut file2 = File::create(&file_path2).unwrap();
+        writeln!(file2, "Hello, Rust!").unwrap();
+
+        let flags = Flags::default();
+        let provided = vec![dir.path().to_str().unwrap().to_string()];
+        let result = get_all_files(&provided, &flags).unwrap();
+        assert!(result.contains(&file_path1));
+        assert!(result.contains(&file_path2));
+    }
+
+    #[test]
+    fn test_get_files_from_directory_non_recursive() {
+        let dir = tempdir().unwrap();
+        let subdir = dir.path().join("subdir");
+        fs::create_dir(&subdir).unwrap();
+        let file_path = subdir.join("test_file.txt");
+        let mut file = File::create(&file_path).unwrap();
+        writeln!(file, "Hello, world!").unwrap();
+
+        let mut flags = Flags::default();
+        flags.recursive.set_enabled(false);
+        let result = get_files_from_directory(dir.path(), &flags);
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn test_get_files_from_directory_recursive() {
+        let dir = tempdir().unwrap();
+        let subdir = dir.path().join("subdir");
+        fs::create_dir(&subdir).unwrap();
+        let file_path = subdir.join("test_file.txt");
+        let mut file = File::create(&file_path).unwrap();
+        writeln!(file, "Hello, world!").unwrap();
+
+        let mut flags = Flags::default();
+        flags.recursive.set_enabled(true);
+        let result = get_files_from_directory(dir.path(), &flags);
+        assert!(result.contains(&file_path));
+    }
 }
