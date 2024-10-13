@@ -99,24 +99,6 @@ pub fn highlight_matches(line: &str, matches: &[(usize, usize)]) -> String {
     highlighted
 }
 
-// This function is used to print search results using a Lua callback function
-pub fn print_with_lua_callback(
-    results: &[SearchMatch],
-    flags: &Flags,
-    lua_plugin: &LuaPlugin,
-    lua_callback: &str,
-) -> LuaResult<()> {
-    let lua_ctx = &lua_plugin.lua;
-    let lua_callback_fn = lua_ctx.globals().get::<_, rlua::Function>(lua_callback)?;
-
-    for result in results {
-        let lua_result_table = LuaPlugin::create_result_table(lua_ctx, result);
-        lua_callback_fn.call::<_, ()>(lua_result_table)?;
-    }
-
-    Ok(())
-}
-
 #[cfg(test)]
 mod tests {
     use crate::app::flag::OptionState;

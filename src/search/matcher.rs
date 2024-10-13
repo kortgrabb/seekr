@@ -1,12 +1,13 @@
 use crate::app::flag::Flags;
 use crate::search::file_io::get_all_files;
 use crate::search::result::SearchMatch;
+use colored::Colorize;
 use lazy_static::lazy_static;
 use rayon::prelude::*;
 use regex::Regex;
 use std::collections::HashMap;
 use std::fs::{self, File};
-use std::io::{self, BufRead, BufReader};
+use std::io::{self, BufRead, BufReader, Write};
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Mutex;
@@ -39,35 +40,6 @@ pub fn create_regex(needle: &str, ignore_case: bool) -> Result<Regex, regex::Err
     Ok(regex)
 }
 
-// // Main function to search for a pattern in a list of files
-// pub fn search_multiple_files(
-//     needle: &str,
-//     files: &[PathBuf],
-//     flags: &Flags,
-// ) -> Result<Vec<SearchMatch>, io::Error> {
-//     let regex = create_regex(needle, flags.ignore_case.is_enabled())
-//         .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
-
-//     let file_count_threshold = 10;
-//     let total_size_threshold = 10_000_000; // ~10 MB
-
-//     let total_size: u64 = files
-//         .iter()
-//         .filter_map(|f| fs::metadata(f).ok()) // Filter out files with invalid metadata
-//         .map(|metadata| metadata.len())
-//         .sum();
-
-//     // Decide whether to search files in parallel or sequentially
-//     // Based on the number of files and size
-//     let use_parallel = files.len() > file_count_threshold || total_size > total_size_threshold;
-
-//     if use_parallel {
-//         search_files_parallel(files, &regex, flags)
-//     } else {
-//         search_files_sequential(files, &regex, flags)
-//     }
-// }
-
 pub fn search_single_file(
     needle: &str,
     file: &str,
@@ -79,44 +51,6 @@ pub fn search_single_file(
     search_file(&file, &regex, flags)
 }
 
-// // Search files in parallel using Rayon
-// pub fn search_files_parallel(
-//     files: &[PathBuf],
-//     regex: &Regex,
-//     flags: &Flags,
-// ) -> Result<Vec<SearchMatch>, io::Error> {
-//     // Use Rayon to search files in parallel, which can speed up the search for large file sets
-//     let results: Result<Vec<_>, _> = files
-//         .par_iter()
-//         .map(|file| {
-//             let matches = search_file(file, regex, flags)?;
-//             if !matches.is_empty() {
-//                 print_match_results(&matches, flags);
-//             }
-//             Ok(matches)
-//         })
-//         .collect();
-//     results.map(|vecs| vecs.into_iter().flatten().collect())
-// }
-
-// // Search files sequentially
-// pub fn search_files_sequential(
-//     files: &[PathBuf],
-//     regex: &Regex,
-//     flags: &Flags,
-// ) -> Result<Vec<SearchMatch>, io::Error> {
-//     let mut results = Vec::new();
-//     // Iterate through each file and search for matches
-//     for file in files {
-//         let matches = search_file(file, regex, flags)?;
-//         if !matches.is_empty() {
-//             print_match_results(&matches, flags);
-//         }
-//         results.extend(matches);
-//     }
-//     Ok(results)
-// }
-
 // Search for matches in a specific file
 pub fn search_file(
     file: &Path,
@@ -126,6 +60,9 @@ pub fn search_file(
     // Open the file for reading
     let file_handle = File::open(file)?;
     let reader = BufReader::new(file_handle);
+
+    // Print the file path in blue
+    writeln!(io::stdout(), "{}", file.to_string_lossy().blue());
 
     let mut results: Vec<SearchMatch> = Vec::new();
     // Iterate through each line in the file
