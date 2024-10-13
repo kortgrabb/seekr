@@ -32,15 +32,12 @@ pub fn print_match_results(results: &[SearchMatch], flags: &Flags) {
         return;
     }
 
-    results
-        .iter()
-        .map(|res| format_match_result(res, flags))
-        .for_each(|res| {
-            let sanitized_res = sanitize_output(&res);
-            let stdout = std::io::stdout();
-            let mut handle = BufWriter::new(stdout.lock());
-            writeln!(handle, "{}", sanitized_res).expect("Failed to write to stdout");
-        });
+    results.iter().for_each(|res| {
+        let sanitized_res = format_match_result(res, flags);
+        let stdout = std::io::stdout();
+        let mut handle = BufWriter::new(stdout.lock());
+        writeln!(handle, "{}", sanitized_res).expect("Failed to write to stdout");
+    });
 }
 
 // Sanitize output to prevent control characters from affecting the terminal
@@ -58,7 +55,10 @@ pub fn format_match_result(result: &SearchMatch, flags: &Flags) -> String {
     }
 
     // TODO: add separator if flag is set
+    // Sanitize the line content
+    let sanitized_line_content = sanitize_output(result.line_content.as_str());
 
+    output.push_str(&highlight_matches(&sanitized_line_content, &result.matches));
     // Highlight the matches in the line content
     output.push_str(&highlight_matches(&result.line_content, &result.matches));
     output
