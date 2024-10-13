@@ -45,13 +45,12 @@ pub fn print_match_results(results: &[SearchMatch], flags: &Flags) {
         return;
     }
 
-    let output = results
+    results
         .iter()
         .map(|res| format_match_result(res, flags))
-        .collect::<Vec<_>>();
-
-    // Print the results
-    println!("{}", output.join("\n"));
+        .for_each(|res| {
+            println!("{}", res);
+        });
 }
 
 // Format a match result for printing
@@ -97,6 +96,7 @@ pub fn highlight_matches(line: &str, matches: &[(usize, usize)]) -> String {
     highlighted
 }
 
+// This function is used to print search results using a Lua callback function
 pub fn print_with_lua_callback(
     results: &[SearchMatch],
     flags: &Flags,

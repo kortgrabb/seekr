@@ -1,7 +1,11 @@
 [package]
-name = "grep"
+name = "seekr"
 version = "0.1.0"
 edition = "2021"
+
+[[bin]]
+name = "seek"
+path = "src/main.rs"
 
 [dependencies]
 clap = "*"

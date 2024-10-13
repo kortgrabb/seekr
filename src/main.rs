@@ -40,14 +40,16 @@ fn run() -> Result<ExitCode, Box<dyn std::error::Error>> {
     // If there is a Lua script provided in the CLI, evaluate it.
     if let Some(script_path) = &cli.lua_script {
         let lua_plugin = LuaPlugin::new();
-        lua_plugin.run_script(script_path, &results)?;
+
         // If there is a callback function in the Lua script, execute it.
-        let callback_name = "process_result";
+        lua_plugin.run_script(script_path, &results)?;
+
+        let callback_name: &str = "process_result";
         if lua_plugin.has_function(callback_name)? {
-            lua_plugin.execute_callback(callback_name, &results)?;
-        } else {
-            print_results(&results, &flags);
+            print_with_lua_callback(&results, &flags, &lua_plugin, callback_name)?;
         }
+    } else {
+        print_results(&results, &flags);
     }
     Ok(ExitCode::from(0))
 }

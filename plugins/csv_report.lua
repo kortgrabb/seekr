@@ -7,7 +7,8 @@ csv_file:write("File,Line Number,Content\n")
 -- Write each search match as a line in the CSV
 for i = 1, #results do
     local result = results[i]
-    local csv_line = string.format("%s,%d,\"%s\"\n", result.file, result.line_number, result.line_content)
+    local escaped_content = result.line_content:gsub('"', '""')
+    local csv_line = string.format('%s,%d,"%s"\n', result.file, result.line_number, escaped_content)
     csv_file:write(csv_line)
 end
 

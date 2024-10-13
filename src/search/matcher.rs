@@ -104,8 +104,11 @@ pub fn process_line(
     regex: &Regex,
     invert_match: bool,
 ) -> Result<Option<SearchMatch>, io::Error> {
-    // Unwrap the line content from the Result
-    let line_content = line?;
+    // Handle potential invalid UTF-8 sequences gracefully
+    let line_content = match line {
+        Ok(content) => content,
+        Err(_) => return Ok(None), // Skip lines with invalid UTF-8
+    };
 
     // Find matches in the line content using the regex
     let matches: Vec<_> = regex.find_iter(&line_content).collect();
@@ -117,7 +120,7 @@ pub fn process_line(
                 file.to_string_lossy().as_ref(),
                 line_number + 1, // Line numbers are 1-based
                 line_content,
-                Vec::new(), // No matches since we're inverting      // Indicate this is an inverted match
+                Vec::new(), // No matches since we're inverting
             )))
         } else {
             // Line matches the regex; skip it in inverted search
