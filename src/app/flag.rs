@@ -4,8 +4,6 @@ use clap::{Arg, ArgAction, ArgMatches};
 
 #[derive(Debug, Default)]
 pub struct Flags {
-    pub parallel: OptionState,
-    pub recursive: OptionState,
     pub count: OptionState,
     pub show_lines: OptionState,
     pub show_names: OptionState,
@@ -81,16 +79,6 @@ impl Flags {
 
     pub fn from_matches(matches: &ArgMatches) -> Self {
         Self {
-            parallel: if matches.get_flag("parallel") {
-                OptionState::Enabled
-            } else {
-                OptionState::Disabled
-            },
-            recursive: if matches.get_flag("recursive") {
-                OptionState::Enabled
-            } else {
-                OptionState::Disabled
-            },
             count: if matches.get_flag("count") {
                 OptionState::Enabled
             } else {

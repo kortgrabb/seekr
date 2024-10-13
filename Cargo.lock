@@ -503,6 +503,7 @@ dependencies = [
  "clap",
  "colored",
  "ignore",
+ "lazy_static",
  "log",
  "num_cpus",
  "rayon",

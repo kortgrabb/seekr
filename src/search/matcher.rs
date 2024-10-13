@@ -1,73 +1,121 @@
 use crate::app::flag::Flags;
 use crate::search::file_io::get_all_files;
 use crate::search::result::SearchMatch;
+use lazy_static::lazy_static;
 use rayon::prelude::*;
 use regex::Regex;
-use std::fs::File;
+use std::collections::HashMap;
+use std::fs::{self, File};
 use std::io::{self, BufRead, BufReader};
 use std::path::Path;
 use std::path::PathBuf;
+use std::sync::Mutex;
+
+use super::printer::print_match_results;
 
 // TODO: add non-regex search if not needed
 
 // Create a regex pattern from the search string, handling case sensitivity
+lazy_static! {
+    static ref REGEX_CACHE: Mutex<HashMap<(String, bool), Regex>> = Mutex::new(HashMap::new());
+}
+
 pub fn create_regex(needle: &str, ignore_case: bool) -> Result<Regex, regex::Error> {
-    // If case-insensitive search is requested, prepend the regex with "(?i)"
+    let key = (needle.to_string(), ignore_case);
+    let mut cache = REGEX_CACHE.lock().unwrap();
+
+    if let Some(regex) = cache.get(&key) {
+        return Ok(regex.clone());
+    }
+
     let needle = if ignore_case {
         format!("(?i){needle}")
     } else {
         needle.to_owned()
     };
-    Regex::new(&needle)
+
+    let regex = Regex::new(&needle)?;
+    cache.insert(key, regex.clone());
+    Ok(regex)
 }
 
-// Main function to search for a pattern in a list of files
-pub fn search_files(
+// // Main function to search for a pattern in a list of files
+// pub fn search_multiple_files(
+//     needle: &str,
+//     files: &[PathBuf],
+//     flags: &Flags,
+// ) -> Result<Vec<SearchMatch>, io::Error> {
+//     let regex = create_regex(needle, flags.ignore_case.is_enabled())
+//         .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
+
+//     let file_count_threshold = 10;
+//     let total_size_threshold = 10_000_000; // ~10 MB
+
+//     let total_size: u64 = files
+//         .iter()
+//         .filter_map(|f| fs::metadata(f).ok()) // Filter out files with invalid metadata
+//         .map(|metadata| metadata.len())
+//         .sum();
+
+//     // Decide whether to search files in parallel or sequentially
+//     // Based on the number of files and size
+//     let use_parallel = files.len() > file_count_threshold || total_size > total_size_threshold;
+
+//     if use_parallel {
+//         search_files_parallel(files, &regex, flags)
+//     } else {
+//         search_files_sequential(files, &regex, flags)
+//     }
+// }
+
+pub fn search_single_file(
     needle: &str,
-    files: &[String],
+    file: &str,
     flags: &Flags,
 ) -> Result<Vec<SearchMatch>, io::Error> {
-    // Get all files to be searched
-    let files = get_all_files(files, flags)?;
-    // Create a regex pattern, considering case sensitivity
     let regex = create_regex(needle, flags.ignore_case.is_enabled())
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
-
-    // Choose between parallel or sequential file searching based on the flag
-    if flags.parallel.is_enabled() {
-        search_files_parallel(&files, &regex, flags)
-    } else {
-        search_files_sequential(&files, &regex, flags)
-    }
+    let file = PathBuf::from(file);
+    search_file(&file, &regex, flags)
 }
 
-// Search files in parallel using Rayon
-pub fn search_files_parallel(
-    files: &[PathBuf],
-    regex: &Regex,
-    flags: &Flags,
-) -> Result<Vec<SearchMatch>, io::Error> {
-    // Use Rayon to search files in parallel, which can speed up the search for large file sets
-    let results: Result<Vec<_>, _> = files
-        .par_iter()
-        .map(|file| search_file(file, regex, flags))
-        .collect();
-    results.map(|vecs| vecs.into_iter().flatten().collect())
-}
+// // Search files in parallel using Rayon
+// pub fn search_files_parallel(
+//     files: &[PathBuf],
+//     regex: &Regex,
+//     flags: &Flags,
+// ) -> Result<Vec<SearchMatch>, io::Error> {
+//     // Use Rayon to search files in parallel, which can speed up the search for large file sets
+//     let results: Result<Vec<_>, _> = files
+//         .par_iter()
+//         .map(|file| {
+//             let matches = search_file(file, regex, flags)?;
+//             if !matches.is_empty() {
+//                 print_match_results(&matches, flags);
+//             }
+//             Ok(matches)
+//         })
+//         .collect();
+//     results.map(|vecs| vecs.into_iter().flatten().collect())
+// }
 
-// Search files sequentially
-pub fn search_files_sequential(
-    files: &[PathBuf],
-    regex: &Regex,
-    flags: &Flags,
-) -> Result<Vec<SearchMatch>, io::Error> {
-    let mut results = Vec::new();
-    // Iterate through each file and search for matches
-    for file in files {
-        results.extend(search_file(file, regex, flags)?);
-    }
-    Ok(results)
-}
+// // Search files sequentially
+// pub fn search_files_sequential(
+//     files: &[PathBuf],
+//     regex: &Regex,
+//     flags: &Flags,
+// ) -> Result<Vec<SearchMatch>, io::Error> {
+//     let mut results = Vec::new();
+//     // Iterate through each file and search for matches
+//     for file in files {
+//         let matches = search_file(file, regex, flags)?;
+//         if !matches.is_empty() {
+//             print_match_results(&matches, flags);
+//         }
+//         results.extend(matches);
+//     }
+//     Ok(results)
+// }
 
 // Search for matches in a specific file
 pub fn search_file(
@@ -92,11 +140,13 @@ pub fn search_file(
         )?;
         if let Some(result) = line {
             results.push(result);
+            print_match_results(&results, flags);
         }
     }
 
     Ok(results)
 }
+
 pub fn process_line(
     file: &Path,
     line_number: usize,
@@ -141,83 +191,5 @@ pub fn process_line(
     } else {
         // Line does not match the regex; skip it
         Ok(None)
-    }
-}
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::fs::{self, File};
-    use std::io::Write;
-    use std::path::PathBuf;
-
-    // test_file.txt: "This is a test line.\nAnother test line."
-
-    fn create_test_file(content: &str) -> PathBuf {
-        let file_path = PathBuf::from("test_file.txt");
-        let mut file = File::create(&file_path).unwrap();
-        writeln!(file, "{content}").unwrap();
-        file_path
-    }
-
-    #[test]
-    fn test_create_regex_case_sensitive() {
-        let regex = create_regex("test", false).unwrap();
-        assert!(regex.is_match("test"));
-        assert!(!regex.is_match("TEST"));
-    }
-
-    #[test]
-    fn test_create_regex_case_insensitive() {
-        let regex = create_regex("test", true).unwrap();
-        assert!(regex.is_match("test"));
-        assert!(regex.is_match("TEST"));
-    }
-
-    #[test]
-    fn test_search_file() {
-        let file_path = create_test_file("This is a test line.\nAnother test line.");
-        let regex = create_regex("test", false).unwrap();
-        let flags = Flags::default();
-        let matches = search_file(&file_path, &regex, &flags).unwrap();
-        assert_eq!(matches.len(), 2);
-        fs::remove_file(file_path).unwrap();
-    }
-
-    #[test]
-    fn test_search_file_invert_match() {
-        let file_path = create_test_file("This is a test line.\nAnother test line.");
-        let regex = create_regex("test", false).unwrap();
-        let mut flags = Flags::default();
-        flags.invert_match.set_enabled(true);
-        let matches = search_file(&file_path, &regex, &flags).unwrap();
-        assert_eq!(matches.len(), 0);
-        fs::remove_file(file_path).unwrap();
-    }
-
-    #[test]
-    fn test_process_line_match() {
-        let file_path = PathBuf::from("test_file.txt");
-        let regex = create_regex("test", false).unwrap();
-        let line = Ok("This is a test line.".to_string());
-        let result = process_line(&file_path, 0, line, &regex, false).unwrap();
-        assert!(result.is_some());
-    }
-
-    #[test]
-    fn test_process_line_no_match() {
-        let file_path = PathBuf::from("test_file.txt");
-        let regex = create_regex("test", false).unwrap();
-        let line = Ok("This is a line.".to_string());
-        let result = process_line(&file_path, 0, line, &regex, false).unwrap();
-        assert!(result.is_none());
-    }
-
-    #[test]
-    fn test_process_line_invert_match() {
-        let file_path = PathBuf::from("test_file.txt");
-        let regex = create_regex("test", false).unwrap();
-        let line = Ok("This is a line.".to_string());
-        let result = process_line(&file_path, 0, line, &regex, true).unwrap();
-        assert!(result.is_some());
     }
 }

@@ -7,6 +7,7 @@ use colored::Colorize;
 use rlua::{Lua, Result as LuaResult, RluaCompat};
 use std::collections::HashMap;
 use std::fmt::Write;
+use std::io::{BufWriter, Write as IoWrite};
 
 // Print search results, either count or detailed matches
 pub fn print_results(results: &[SearchMatch], flags: &Flags) {
@@ -49,7 +50,9 @@ pub fn print_match_results(results: &[SearchMatch], flags: &Flags) {
         .iter()
         .map(|res| format_match_result(res, flags))
         .for_each(|res| {
-            println!("{}", res);
+            let stdout = std::io::stdout();
+            let mut handle = BufWriter::new(stdout.lock());
+            writeln!(handle, "{}", res).expect("Failed to write to stdout");
         });
 }
 
