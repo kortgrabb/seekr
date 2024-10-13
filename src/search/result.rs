@@ -1,4 +1,6 @@
-#[derive(Debug)]
+use rlua::UserData;
+
+#[derive(Debug, Clone)]
 pub struct SearchMatch {
     pub file: String,                 // Name of the file containing the line
     pub line_number: usize,           // Line number in the file

@@ -6,6 +6,7 @@ use super::flag::Flags;
 pub struct Cli {
     pub needle: String,
     pub files: Vec<String>,
+    pub lua_script: Option<String>,
 }
 
 pub fn parse_args() -> (Cli, Flags) {
@@ -26,6 +27,12 @@ pub fn parse_args() -> (Cli, Flags) {
                 .action(clap::ArgAction::Append)
                 .index(2),
         )
+        .arg(
+            Arg::new("lua_script")
+                .long("lua")
+                .value_name("SCRIPT")
+                .help("Lua script to execute on search results"),
+        )
         .args(Flags::args())
         .get_matches();
 
@@ -38,8 +45,19 @@ pub fn parse_args() -> (Cli, Flags) {
         .map(std::string::ToString::to_string)
         .collect();
 
+    let lua_script = matches
+        .get_one::<String>("lua_script")
+        .map(std::string::ToString::to_string);
+
     // Extract flags from matches.
     let flags = Flags::from_matches(&matches);
 
-    (Cli { needle, files }, flags)
+    (
+        Cli {
+            needle,
+            files,
+            lua_script,
+        },
+        flags,
+    )
 }

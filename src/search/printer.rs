@@ -1,8 +1,10 @@
 // src/search/printer.rs
 
 use crate::app::flag::Flags;
+use crate::plugin_integration::lua_plugin::LuaPlugin;
 use crate::search::result::SearchMatch;
 use colored::Colorize;
+use rlua::{Lua, Result as LuaResult, RluaCompat};
 use std::collections::HashMap;
 use std::fmt::Write;
 
@@ -46,10 +48,10 @@ pub fn print_match_results(results: &[SearchMatch], flags: &Flags) {
     let output = results
         .iter()
         .map(|res| format_match_result(res, flags))
-        .collect::<Vec<_>>()
-        .join("\n");
+        .collect::<Vec<_>>();
 
-    println!("{output}");
+    // Print the results
+    println!("{}", output.join("\n"));
 }
 
 // Format a match result for printing
@@ -94,6 +96,24 @@ pub fn highlight_matches(line: &str, matches: &[(usize, usize)]) -> String {
     highlighted.push_str(&line[last_end..]); // Append the remaining text
     highlighted
 }
+
+pub fn print_with_lua_callback(
+    results: &[SearchMatch],
+    flags: &Flags,
+    lua_plugin: &LuaPlugin,
+    lua_callback: &str,
+) -> LuaResult<()> {
+    let lua_ctx = &lua_plugin.lua;
+    let lua_callback_fn = lua_ctx.globals().get::<_, rlua::Function>(lua_callback)?;
+
+    for result in results {
+        let lua_result_table = LuaPlugin::create_result_table(lua_ctx, result);
+        lua_callback_fn.call::<_, ()>(lua_result_table)?;
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use crate::app::flag::OptionState;
