@@ -6,8 +6,6 @@ use regex::Regex;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{self, BufRead, BufReader};
-use std::path::Path;
-use std::path::PathBuf;
 use std::sync::Mutex;
 
 use super::printer::{print_count_results, print_match_results};
@@ -19,7 +17,7 @@ lazy_static! {
     static ref REGEX_CACHE: Mutex<HashMap<(String, bool), Regex>> = Mutex::new(HashMap::new());
 }
 
-pub fn create_regex(needle: &str, ignore_case: bool) -> Result<Regex, regex::Error> {
+pub fn compile_or_get_regex(needle: &str, ignore_case: bool) -> Result<Regex, regex::Error> {
     let key = (needle.to_string(), ignore_case);
     let mut cache = REGEX_CACHE.lock().unwrap();
 
@@ -38,18 +36,18 @@ pub fn create_regex(needle: &str, ignore_case: bool) -> Result<Regex, regex::Err
     Ok(regex)
 }
 
-pub fn search_single_file(needle: &str, file: &str, flags: &Flags) -> Result<usize, io::Error> {
-    let regex = create_regex(needle, flags.ignore_case.is_enabled())
-        .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
-    let file = PathBuf::from(file);
-    search_file(&file, &regex, flags)
-}
-
 // Search for matches in a specific file
-pub fn search_file(file: &Path, regex: &Regex, flags: &Flags) -> Result<usize, io::Error> {
+pub fn search_file_for_patterns(
+    needle: &str,
+    file: &str,
+    flags: &Flags,
+) -> Result<usize, io::Error> {
     // Open the file for reading
     let file_handle = File::open(file)?;
     let reader = BufReader::new(file_handle);
+
+    // Compile the regex pattern
+    let regex = compile_or_get_regex(needle, flags.ignore_case.is_enabled()).unwrap();
 
     let mut results: Vec<SearchMatch> = Vec::new();
     // Iterate through each line in the file
@@ -59,7 +57,7 @@ pub fn search_file(file: &Path, regex: &Regex, flags: &Flags) -> Result<usize, i
             file,
             line_number,
             line,
-            regex,
+            &regex,
             flags.invert_match.is_enabled(),
         )?;
 
@@ -70,7 +68,7 @@ pub fn search_file(file: &Path, regex: &Regex, flags: &Flags) -> Result<usize, i
     }
 
     if !results.is_empty() && !flags.count.is_enabled() {
-        println!("{}", file.to_string_lossy().blue());
+        println!("{}", file.cyan());
         print_match_results(&results, flags);
     } else if flags.count.is_enabled() {
         print_count_results(&results);
@@ -80,7 +78,7 @@ pub fn search_file(file: &Path, regex: &Regex, flags: &Flags) -> Result<usize, i
 }
 
 pub fn process_line(
-    file: &Path,
+    file: &str,
     line_number: usize,
     line: io::Result<String>,
     regex: &Regex,
@@ -99,7 +97,7 @@ pub fn process_line(
         if matches.is_empty() {
             // Line does NOT match the regex; it's a match for inverted search
             Ok(Some(SearchMatch::new(
-                file.to_string_lossy().as_ref(),
+                file,
                 line_number + 1, // Line numbers are 1-based
                 line_content,
                 Vec::new(), // No matches since we're inverting
@@ -115,7 +113,7 @@ pub fn process_line(
             .map(|m| (m.start(), m.end()))
             .collect::<Vec<(usize, usize)>>();
         Ok(Some(SearchMatch::new(
-            file.to_string_lossy().as_ref(),
+            file,
             line_number + 1, // Line numbers are 1-based
             line_content,
             match_positions,
