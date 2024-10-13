@@ -36,9 +36,10 @@ pub fn print_match_results(results: &[SearchMatch], flags: &Flags) {
         .iter()
         .map(|res| format_match_result(res, flags))
         .for_each(|res| {
+            let sanitized_res = res.replace('\x07', ""); // Remove bell character
             let stdout = std::io::stdout();
             let mut handle = BufWriter::new(stdout.lock());
-            writeln!(handle, "{}", res).expect("Failed to write to stdout");
+            writeln!(handle, "{}", sanitized_res).expect("Failed to write to stdout");
         });
 }
 

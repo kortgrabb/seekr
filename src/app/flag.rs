@@ -46,7 +46,6 @@ macro_rules! flag {
 impl Flags {
     pub fn args() -> Vec<Arg> {
         vec![
-            flag!("parallel", 'p', "parallel", "Enable parallel execution"),
             flag!(
                 "recursive",
                 'r',
