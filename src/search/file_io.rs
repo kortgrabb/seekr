@@ -8,7 +8,7 @@ use super::matcher::search_single_file;
 
 // Get all files from a list of provided paths
 pub fn get_all_files(
-    needle: &String,
+    needle: &str,
     provided: &[String],
     flags: &Flags,
 ) -> Result<Vec<PathBuf>, io::Error> {
@@ -22,7 +22,7 @@ pub fn get_all_files(
 
 // Get files from a single path
 pub fn get_files_from_path(
-    needle: &String,
+    needle: &str,
     path_name: &str,
     flags: &Flags,
 ) -> Result<Vec<PathBuf>, io::Error> {
@@ -32,7 +32,9 @@ pub fn get_files_from_path(
         Ok(get_files_from_directory(needle, path, flags))
     } else if path.is_file() {
         // call search on file here
-        search_single_file(needle, path_name, flags);
+        if let Err(e) = search_single_file(needle, path_name, flags) {
+            eprintln!("Error searching file '{}': {}", path_name, e);
+        }
         Ok(vec![path.to_path_buf()])
     } else {
         // Return an error if the path is neither a file nor a directory
@@ -44,7 +46,7 @@ pub fn get_files_from_path(
 }
 
 // Get files from a directory, considering the recursive flag
-pub fn get_files_from_directory(needle: &String, path: &Path, flags: &Flags) -> Vec<PathBuf> {
+pub fn get_files_from_directory(needle: &str, path: &Path, flags: &Flags) -> Vec<PathBuf> {
     // Use WalkBuilder to traverse the directory
     let builder = WalkBuilder::new(path)
         .hidden(!flags.hidden.is_enabled()) // Enable ignoring hidden files if flag is set
@@ -55,7 +57,9 @@ pub fn get_files_from_directory(needle: &String, path: &Path, flags: &Flags) -> 
         .filter_map(std::result::Result::ok) // Filter out any errors
         .filter(|entry| entry.path().is_file()) // Filter out directories
         .map(|entry| {
-            search_single_file(needle, entry.path().to_str().unwrap(), flags); // Call search on each file
+            if let Err(e) = search_single_file(needle, entry.path().to_str().unwrap(), flags) {
+                eprintln!("Error searching file '{}': {}", entry.path().display(), e);
+            } // Call search on each file and handle errors
             entry.path().to_path_buf()
         })
         .collect();

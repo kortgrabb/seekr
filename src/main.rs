@@ -28,7 +28,9 @@ fn run() -> Result<ExitCode, Box<dyn std::error::Error>> {
 
     let needle = &cli.needle;
     let files = &cli.files;
-    get_all_files(needle, files, &flags)?;
+    let all_files = get_all_files(needle, files, &flags)?;
+
+    let file_amount = all_files.len();
 
     Ok(ExitCode::from(0))
 }

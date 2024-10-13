@@ -1,18 +1,16 @@
 use crate::app::flag::Flags;
-use crate::search::file_io::get_all_files;
 use crate::search::result::SearchMatch;
 use colored::Colorize;
 use lazy_static::lazy_static;
-use rayon::prelude::*;
 use regex::Regex;
 use std::collections::HashMap;
-use std::fs::{self, File};
-use std::io::{self, BufRead, BufReader, Write};
+use std::fs::File;
+use std::io::{self, BufRead, BufReader};
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Mutex;
 
-use super::printer::print_match_results;
+use super::printer::{print_count_results, print_match_results};
 
 // TODO: add non-regex search if not needed
 
@@ -40,11 +38,7 @@ pub fn create_regex(needle: &str, ignore_case: bool) -> Result<Regex, regex::Err
     Ok(regex)
 }
 
-pub fn search_single_file(
-    needle: &str,
-    file: &str,
-    flags: &Flags,
-) -> Result<Vec<SearchMatch>, io::Error> {
+pub fn search_single_file(needle: &str, file: &str, flags: &Flags) -> Result<usize, io::Error> {
     let regex = create_regex(needle, flags.ignore_case.is_enabled())
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
     let file = PathBuf::from(file);
@@ -52,17 +46,10 @@ pub fn search_single_file(
 }
 
 // Search for matches in a specific file
-pub fn search_file(
-    file: &Path,
-    regex: &Regex,
-    flags: &Flags,
-) -> Result<Vec<SearchMatch>, io::Error> {
+pub fn search_file(file: &Path, regex: &Regex, flags: &Flags) -> Result<usize, io::Error> {
     // Open the file for reading
     let file_handle = File::open(file)?;
     let reader = BufReader::new(file_handle);
-
-    // Print the file path in blue
-    writeln!(io::stdout(), "{}", file.to_string_lossy().blue());
 
     let mut results: Vec<SearchMatch> = Vec::new();
     // Iterate through each line in the file
@@ -75,13 +62,21 @@ pub fn search_file(
             regex,
             flags.invert_match.is_enabled(),
         )?;
+
+        // Add the match to the results if it exists
         if let Some(result) = line {
             results.push(result);
-            print_match_results(&results, flags);
         }
     }
 
-    Ok(results)
+    if !results.is_empty() && !flags.count.is_enabled() {
+        println!("{}", file.to_string_lossy().blue());
+        print_match_results(&results, flags);
+    } else if flags.count.is_enabled() {
+        print_count_results(&results);
+    }
+    let total_count = results.len();
+    Ok(total_count)
 }
 
 pub fn process_line(

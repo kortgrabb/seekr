@@ -1,5 +1,5 @@
 use crate::search::result::SearchMatch;
-use rlua::{Function, Lua, Result as LuaResult, RluaCompat, Table};
+use rlua::{Function, Lua, Result as LuaResult, Table};
 use std::fs;
 
 pub struct LuaPlugin {
