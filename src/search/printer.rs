@@ -2,6 +2,7 @@
 
 use crate::app::flag::Flags;
 use crate::search::result::SearchMatch;
+use clap::builder::Str;
 use colored::Colorize;
 use std::collections::HashMap;
 use std::fmt::Write;
@@ -33,34 +34,34 @@ pub fn print_match_results(results: &[SearchMatch], flags: &Flags) {
     }
 
     results.iter().for_each(|res| {
-        let sanitized_res = format_match_result(res, flags);
+        let output = format_match_result(res, flags);
         let stdout = std::io::stdout();
         let mut handle = BufWriter::new(stdout.lock());
-        writeln!(handle, "{}", sanitized_res).expect("Failed to write to stdout");
+        writeln!(handle, "{}", output).expect("Failed to write to stdout");
     });
 }
 
 // Sanitize output to prevent control characters from affecting the terminal
 fn sanitize_output(output: &str) -> String {
-    output.chars().filter(|c| !c.is_control()).collect()
+    output
+        .chars()
+        .filter(|c| !c.is_control())
+        .collect::<String>()
 }
 
 // Format a match result for printing
 pub fn format_match_result(result: &SearchMatch, flags: &Flags) -> String {
     let mut output = String::new();
 
-    // Include the line number if the flag is set
+    // Include the line number if the flag is setw
     if flags.show_lines.is_enabled() {
         write!(&mut output, "{}:", result.line_number.to_string().cyan()).unwrap();
     }
 
-    // TODO: add separator if flag is set
     // Sanitize the line content
     let sanitized_line_content = sanitize_output(result.line_content.as_str());
-
-    output.push_str(&highlight_matches(&sanitized_line_content, &result.matches));
     // Highlight the matches in the line content
-    output.push_str(&highlight_matches(&result.line_content, &result.matches));
+    output.push_str(&highlight_matches(&sanitized_line_content, &result.matches));
     output
 }
 
