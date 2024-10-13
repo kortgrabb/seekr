@@ -24,3 +24,4 @@ Cargo.lock
 /target
 >>>>>>> 4cb46a7 (initial commit)
 sample.txt
+Cargo.lock
