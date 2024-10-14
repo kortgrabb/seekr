@@ -32,6 +32,12 @@ pub fn print_match_results(results: &[SearchMatch], flags: &Flags) {
         return;
     }
 
+    if !flags.no_file_names.is_enabled() {
+        // All results share the same file
+        let file_name = results[0].file.clone();
+        println!("{}", file_name.bright_blue());
+    }
+
     results.iter().for_each(|res| {
         let output = format_match_result(res, flags);
         let stdout = std::io::stdout();

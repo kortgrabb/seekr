@@ -74,7 +74,6 @@ pub fn search_file_for_patterns(
 
     if !results.is_empty() && !flags.count.is_enabled() {
         writeln!(handle, "{}", file.bright_blue()).unwrap();
-        print_match_results(&results, flags);
     } else if flags.count.is_enabled() {
         print_count_results(&results);
     }
