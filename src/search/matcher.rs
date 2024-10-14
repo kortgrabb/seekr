@@ -53,7 +53,7 @@ pub fn search_file_for_patterns(
     let mut results: Vec<SearchMatch> = Vec::new();
     // Lock stdout to prevent interleaved output
     let stdout = std::io::stdout();
-    let mut handle = stdout.lock();
+    let _ = stdout.lock();
 
     // Iterate through each line in the file
     for (line_number, line) in reader.lines().enumerate() {
