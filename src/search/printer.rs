@@ -2,7 +2,6 @@
 
 use crate::app::flag::Flags;
 use crate::search::result::SearchMatch;
-use clap::builder::Str;
 use colored::Colorize;
 use std::collections::HashMap;
 use std::fmt::Write;
@@ -54,8 +53,8 @@ pub fn format_match_result(result: &SearchMatch, flags: &Flags) -> String {
     let mut output = String::new();
 
     // Include the line number if the flag is setw
-    if flags.show_lines.is_enabled() {
-        write!(&mut output, "{}:", result.line_number.to_string().green()).unwrap();
+    if !flags.no_file_lines.is_enabled() {
+        output.push_str(&format!("{}:", result.line_number));
     }
 
     // Sanitize the line content
@@ -67,7 +66,7 @@ pub fn format_match_result(result: &SearchMatch, flags: &Flags) -> String {
 
 // Format the count result for printing
 pub fn format_count_result(file: &str, count: usize) -> String {
-    format!("{}: {}", file.cyan(), count)
+    format!("{}:{}", file.bright_blue(), count)
 }
 
 // Highlight matches in a line by coloring matched text in red
@@ -76,14 +75,18 @@ pub fn highlight_matches(line: &str, matches: &[(usize, usize)]) -> String {
     let mut last_end = 0;
 
     for (start, end) in matches {
+        // Ensure the indices are within bounds
+        let start = (*start).min(line.len());
+        let end = (*end).min(line.len());
+
         // Append the text before the match
-        output.push_str(&line[last_end..*start]);
+        output.push_str(&line[last_end..start]);
 
         // Append the matched text in red
-        let matched_text = &line[*start..*end];
+        let matched_text = &line[start..end];
         output.push_str(&matched_text.red().to_string());
 
-        last_end = *end;
+        last_end = end;
     }
 
     // Append the text after the last match

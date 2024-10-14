@@ -1,13 +1,12 @@
 use clap::{Arg, Command};
 
 use super::flag::Flags;
-use std::io::{self, Read};
 
 #[derive(Debug)]
 pub struct Cli {
     pub needle: String,
     pub files: Vec<String>,
-    pub lua_script: Option<String>, // TODO: Add support for Lua scripts
+    pub _lua_script: Option<String>, // TODO: Add support for Lua scripts
 }
 
 pub fn parse_args() -> (Cli, Flags) {
@@ -60,7 +59,7 @@ pub fn parse_args() -> (Cli, Flags) {
         Cli {
             needle,
             files,
-            lua_script,
+            _lua_script: lua_script,
         },
         flags,
     )

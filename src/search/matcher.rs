@@ -5,6 +5,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use std::collections::HashMap;
 use std::fs::File;
+use std::io::Write;
 use std::io::{self, BufRead, BufReader};
 use std::sync::Mutex;
 
@@ -50,6 +51,10 @@ pub fn search_file_for_patterns(
     let regex = compile_or_get_regex(needle, flags.ignore_case.is_enabled()).unwrap();
 
     let mut results: Vec<SearchMatch> = Vec::new();
+    // Lock stdout to prevent interleaved output
+    let stdout = std::io::stdout();
+    let mut handle = stdout.lock();
+
     // Iterate through each line in the file
     for (line_number, line) in reader.lines().enumerate() {
         // Process each line to find matches
@@ -68,7 +73,7 @@ pub fn search_file_for_patterns(
     }
 
     if !results.is_empty() && !flags.count.is_enabled() {
-        println!("{}", file.cyan());
+        writeln!(handle, "{}", file.bright_blue()).unwrap();
         print_match_results(&results, flags);
     } else if flags.count.is_enabled() {
         print_count_results(&results);

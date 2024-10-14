@@ -5,7 +5,7 @@ use clap::{Arg, ArgAction, ArgMatches};
 #[derive(Debug, Default)]
 pub struct Flags {
     pub count: OptionState,
-    pub show_lines: OptionState,
+    pub no_file_lines: OptionState,
     pub no_file_names: OptionState, // TODO
     pub ignore_case: OptionState,
     pub invert_match: OptionState,
@@ -66,7 +66,7 @@ impl Flags {
                 "Search all files in all subdirectories"
             ),
             flag!("count", 'c', "count", "Only show the number of matches"),
-            flag!("lines", 'n', "lines", "Add line numbers to output"),
+            flag!("no-lines", "no-lines", "Add line numbers to output"),
             flag!(
                 "ignore-case",
                 'i',
@@ -107,7 +107,7 @@ impl Flags {
             } else {
                 OptionState::Disabled
             },
-            show_lines: if matches.get_flag("lines") {
+            no_file_lines: if matches.get_flag("no-lines") {
                 OptionState::Enabled
             } else {
                 OptionState::Disabled

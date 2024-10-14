@@ -68,7 +68,6 @@ pub fn search_files_parallel(
     flags: &Flags,
     matched: &AtomicBool,
 ) -> Result<SearchResult, io::Error> {
-    let any_errors = AtomicBool::new(false);
     let has_any_match = AtomicBool::new(false);
 
     files.par_iter().for_each(|file| {
