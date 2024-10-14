@@ -24,6 +24,7 @@ pub fn search_files(
     needle: &str,
     files: &[String],
     flags: &Flags,
+    walker: &ignore::WalkBuilder,
     matched: &AtomicBool,
 ) -> Result<SearchResult, io::Error> {
     let mut has_any_match = false;
@@ -32,11 +33,7 @@ pub fn search_files(
         let path = Path::new(file);
 
         if path.is_dir() {
-            for entry in WalkBuilder::new(path)
-                .hidden(!flags.hidden.is_enabled())
-                .build()
-                .filter_map(Result::ok)
-            {
+            for entry in walker.build().filter_map(Result::ok) {
                 if entry.path().is_file() {
                     if let Ok(has_match) = search_file(needle, entry.path(), flags) {
                         if has_match {
@@ -66,6 +63,7 @@ pub fn search_files_parallel(
     needle: &str,
     files: &[String],
     flags: &Flags,
+    walker: &ignore::WalkBuilder,
     matched: &AtomicBool,
 ) -> Result<SearchResult, io::Error> {
     let has_any_match = AtomicBool::new(false);
@@ -74,8 +72,7 @@ pub fn search_files_parallel(
         let path = Path::new(file);
 
         if path.is_dir() {
-            WalkBuilder::new(path)
-                .hidden(!flags.hidden.is_enabled())
+            walker
                 .build()
                 .par_bridge()
                 .filter_map(Result::ok)

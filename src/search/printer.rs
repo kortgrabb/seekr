@@ -1,10 +1,9 @@
 // src/search/printer.rs
 
-use crate::app::flags::{self, Flags};
+use crate::app::flags::Flags;
 use crate::search::result::SearchMatch;
 use colored::Colorize;
 use std::collections::HashMap;
-use std::fmt::Write;
 use std::io::{BufWriter, Write as IoWrite};
 
 // Print the count of matches per file

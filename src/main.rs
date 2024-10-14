@@ -1,5 +1,4 @@
-use app::args::parse_args;
-use app::flags::Flags;
+use app::args::{parse_args, Args};
 use search::searcher::{search_files, search_files_parallel, SearchResult};
 use std::process::ExitCode;
 use std::sync::atomic::AtomicBool;
@@ -26,19 +25,19 @@ fn main() -> ExitCode {
 
 fn run() -> Result<ExitCode, Box<dyn std::error::Error>> {
     // Parse command line arguments to get pattern, files, and flags.
-    let cli = parse_args();
-    let flags = &cli.flags;
+    let args = parse_args();
+    let flags = &args.flags;
 
-    let needle = &cli.needle;
-    let files = &cli.paths;
+    let needle = &args.needle;
+    let files = &args.paths;
 
     let matched = AtomicBool::new(false);
 
     // Determine if multi-threaded search is needed based on flags.
     let result = if flags.sequential.is_enabled() {
-        search(needle, files, &flags, &matched)?
+        search(needle, files, &args, &matched)?
     } else {
-        search_parallel(needle, files, &flags, &matched)?
+        search_parallel(needle, files, &args, &matched)?
     };
 
     // Check if any matches were found.
@@ -53,14 +52,20 @@ fn run() -> Result<ExitCode, Box<dyn std::error::Error>> {
 fn search(
     needle: &str,
     files: &[String],
-    flags: &Flags,
+    args: &Args,
     matched: &AtomicBool,
 ) -> Result<SearchResult, Box<dyn std::error::Error>> {
     let started = std::time::Instant::now();
 
-    let result = search_files(needle, files, flags, matched)?;
+    let walker = args.walk_builder();
+    let result = search_files(needle, files, &args.flags, &walker, matched)?;
+    let elapsed = started.elapsed();
 
-    let _ = started.elapsed(); // TODO
+    println!(
+        "Execution time: {}s {}ms",
+        elapsed.as_secs(),
+        elapsed.subsec_millis()
+    );
 
     Ok(result)
 }
@@ -69,9 +74,20 @@ fn search(
 fn search_parallel(
     needle: &str,
     files: &[String],
-    flags: &Flags,
+    args: &Args,
     matched: &AtomicBool,
 ) -> Result<SearchResult, Box<dyn std::error::Error>> {
-    let result = search_files_parallel(needle, files, flags, matched)?;
+    let started = std::time::Instant::now();
+
+    let walker = args.walk_builder();
+    let result = search_files_parallel(needle, files, &args.flags, &walker, matched)?;
+    let elapsed = started.elapsed();
+
+    println!(
+        "Execution time: {}s {}ms",
+        elapsed.as_secs(),
+        elapsed.subsec_millis()
+    );
+
     Ok(result)
 }

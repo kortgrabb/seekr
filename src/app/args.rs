@@ -3,14 +3,14 @@ use clap::{Arg, Command};
 use super::flags::Flags;
 
 #[derive(Debug)]
-pub struct Cli {
+pub struct Args {
     pub needle: String,
     pub paths: Vec<String>,
     pub _lua_script: Option<String>, // TODO: Add support for Lua scripts
     pub flags: Flags,
 }
 
-impl Cli {
+impl Args {
     pub fn walk_builder(&self) -> ignore::WalkBuilder {
         let mut builder = ignore::WalkBuilder::new(&self.paths[0]);
         for path in self.paths.iter().skip(1) {
@@ -19,13 +19,20 @@ impl Cli {
 
         builder
             .max_depth(self.flags.max_depth)
-            .hidden(!self.flags.hidden.is_enabled());
+            .hidden(!self.flags.hidden.is_enabled())
+            .types(
+                ignore::types::TypesBuilder::new()
+                    .add_defaults()
+                    .select("all")
+                    .build()
+                    .unwrap(),
+            );
 
         builder
     }
 }
 
-pub fn parse_args() -> Cli {
+pub fn parse_args() -> Args {
     let matches = Command::new("getme")
         .version("0.1.0")
         .author("kortgrabb")
@@ -71,7 +78,7 @@ pub fn parse_args() -> Cli {
     // Extract flags from matches.
     let flags = Flags::from_matches(&matches);
 
-    Cli {
+    Args {
         needle,
         paths: files,
         _lua_script: lua_script,
