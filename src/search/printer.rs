@@ -55,7 +55,7 @@ pub fn format_match_result(result: &SearchMatch, flags: &Flags) -> String {
 
     // Include the line number if the flag is setw
     if flags.show_lines.is_enabled() {
-        write!(&mut output, "{}:", result.line_number.to_string().cyan()).unwrap();
+        write!(&mut output, "{}:", result.line_number.to_string().green()).unwrap();
     }
 
     // Sanitize the line content
