@@ -1,11 +1,9 @@
-use crate::app::flag::Flags;
+use crate::app::flags::Flags;
 use crate::search::result::SearchMatch;
-use colored::Colorize;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::Write;
 use std::io::{self, BufRead, BufReader};
 use std::sync::Mutex;
 
@@ -54,7 +52,7 @@ pub fn search_file_for_patterns(
     // Lock stdout to prevent interleaved output
     let stdout = std::io::stdout();
     let _ = stdout.lock();
-
+    let search_once = flags.list_files.is_enabled();
     // Iterate through each line in the file
     for (line_number, line) in reader.lines().enumerate() {
         // Process each line to find matches
@@ -69,6 +67,10 @@ pub fn search_file_for_patterns(
         // Add the match to the results if it exists
         if let Some(result) = line {
             results.push(result);
+
+            if search_once {
+                break;
+            }
         }
     }
 

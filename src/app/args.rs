@@ -1,15 +1,31 @@
 use clap::{Arg, Command};
 
-use super::flag::Flags;
+use super::flags::Flags;
 
 #[derive(Debug)]
 pub struct Cli {
     pub needle: String,
-    pub files: Vec<String>,
+    pub paths: Vec<String>,
     pub _lua_script: Option<String>, // TODO: Add support for Lua scripts
+    pub flags: Flags,
 }
 
-pub fn parse_args() -> (Cli, Flags) {
+impl Cli {
+    pub fn walk_builder(&self) -> ignore::WalkBuilder {
+        let mut builder = ignore::WalkBuilder::new(&self.paths[0]);
+        for path in self.paths.iter().skip(1) {
+            builder.add(path);
+        }
+
+        builder
+            .max_depth(self.flags.max_depth)
+            .hidden(!self.flags.hidden.is_enabled());
+
+        builder
+    }
+}
+
+pub fn parse_args() -> Cli {
     let matches = Command::new("getme")
         .version("0.1.0")
         .author("kortgrabb")
@@ -55,12 +71,10 @@ pub fn parse_args() -> (Cli, Flags) {
     // Extract flags from matches.
     let flags = Flags::from_matches(&matches);
 
-    (
-        Cli {
-            needle,
-            files,
-            _lua_script: lua_script,
-        },
+    Cli {
+        needle,
+        paths: files,
+        _lua_script: lua_script,
         flags,
-    )
+    }
 }

@@ -1,4 +1,3 @@
-use rlua::UserData;
 
 #[derive(Debug, Clone)]
 pub struct SearchMatch {

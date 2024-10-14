@@ -1,6 +1,6 @@
 // src/search/printer.rs
 
-use crate::app::flag::Flags;
+use crate::app::flags::{self, Flags};
 use crate::search::result::SearchMatch;
 use colored::Colorize;
 use std::collections::HashMap;
@@ -36,6 +36,10 @@ pub fn print_match_results(results: &[SearchMatch], flags: &Flags) {
         // All results share the same file
         let file_name = results[0].file.clone();
         println!("{}", file_name.bright_blue());
+
+        if flags.list_files.is_enabled() {
+            return;
+        }
     }
 
     results.iter().for_each(|res| {

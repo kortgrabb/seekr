@@ -1,4 +1,4 @@
-use crate::app::flag::Flags;
+use crate::app::flags::Flags;
 use ignore::WalkBuilder;
 use rayon::prelude::*;
 use std::io;

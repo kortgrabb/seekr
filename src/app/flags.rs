@@ -12,6 +12,7 @@ pub struct Flags {
     pub hidden: OptionState,
     pub list_files: OptionState,
     pub sequential: OptionState,
+    pub max_depth: Option<usize>,
 }
 
 #[derive(Debug, Default)]
@@ -92,6 +93,10 @@ impl Flags {
                 "sequential",
                 "Search files sequentially instead of in parallel"
             ),
+            Arg::new("max-depth")
+                .long("max-depth")
+                .value_name("DEPTH")
+                .help("Set the maximum depth for recursive search"),
         ]
     }
 
@@ -138,6 +143,10 @@ impl Flags {
             } else {
                 OptionState::Disabled
             },
+
+            max_depth: matches
+                .get_one::<String>("max-depth")
+                .map(|v| v.parse::<usize>().unwrap()),
         }
     }
 }

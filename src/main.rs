@@ -1,8 +1,8 @@
-use app::cli::parse_args;
-use app::flag::Flags;
+use app::args::parse_args;
+use app::flags::Flags;
 use search::searcher::{search_files, search_files_parallel, SearchResult};
 use std::process::ExitCode;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::AtomicBool;
 
 mod app;
 mod plugin_integration;
@@ -26,10 +26,11 @@ fn main() -> ExitCode {
 
 fn run() -> Result<ExitCode, Box<dyn std::error::Error>> {
     // Parse command line arguments to get pattern, files, and flags.
-    let (cli, flags) = parse_args();
+    let cli = parse_args();
+    let flags = &cli.flags;
 
     let needle = &cli.needle;
-    let files = &cli.files;
+    let files = &cli.paths;
 
     let matched = AtomicBool::new(false);
 
