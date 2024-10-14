@@ -1,5 +1,4 @@
 use crate::app::flags::Flags;
-use ignore::WalkBuilder;
 use rayon::prelude::*;
 use std::io;
 use std::path::Path;
@@ -9,7 +8,6 @@ use super::matcher::search_file_for_patterns;
 
 pub struct SearchResult {
     pub has_match: bool,
-    // You can extend this struct with additional fields like `stats` or `errors` if needed.
 }
 
 impl SearchResult {
@@ -26,7 +24,7 @@ pub fn search_files(
     flags: &Flags,
     walker: &ignore::WalkBuilder,
     matched: &AtomicBool,
-) -> Result<SearchResult, io::Error> {
+) -> Result<SearchResult, Box<dyn std::error::Error>> {
     let mut has_any_match = false;
 
     for file in files {
@@ -65,7 +63,7 @@ pub fn search_files_parallel(
     flags: &Flags,
     walker: &ignore::WalkBuilder,
     matched: &AtomicBool,
-) -> Result<SearchResult, io::Error> {
+) -> Result<SearchResult, Box<dyn std::error::Error>> {
     let has_any_match = AtomicBool::new(false);
 
     files.par_iter().for_each(|file| {
