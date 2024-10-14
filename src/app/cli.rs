@@ -1,12 +1,13 @@
 use clap::{Arg, Command};
 
 use super::flag::Flags;
+use std::io::{self, Read};
 
 #[derive(Debug)]
 pub struct Cli {
     pub needle: String,
     pub files: Vec<String>,
-    pub lua_script: Option<String>,
+    pub lua_script: Option<String>, // TODO: Add support for Lua scripts
 }
 
 pub fn parse_args() -> (Cli, Flags) {
@@ -23,7 +24,6 @@ pub fn parse_args() -> (Cli, Flags) {
         .arg(
             Arg::new("files")
                 .help("Files or directories to search")
-                .required(true)
                 .action(clap::ArgAction::Append)
                 .index(2),
         )
@@ -37,13 +37,17 @@ pub fn parse_args() -> (Cli, Flags) {
         .get_matches();
 
     // Extract pattern and files from matches.
-    let needle = matches.get_one::<String>("needle").unwrap().to_string();
+    let needle = matches
+        .get_one::<String>("needle")
+        .map(std::string::ToString::to_string)
+        .unwrap();
 
     let files = matches
         .get_many::<String>("files")
-        .unwrap()
-        .map(std::string::ToString::to_string)
-        .collect();
+        .map(|values| values.map(|v| v.to_string()).collect())
+        .unwrap_or(vec![".".to_string()]);
+
+    // TODO: add pipeline support
 
     let lua_script = matches
         .get_one::<String>("lua_script")

@@ -41,7 +41,7 @@ pub fn search_file_for_patterns(
     needle: &str,
     file: &str,
     flags: &Flags,
-) -> Result<usize, io::Error> {
+) -> Result<bool, io::Error> {
     // Open the file for reading
     let file_handle = File::open(file)?;
     let reader = BufReader::new(file_handle);
@@ -73,8 +73,8 @@ pub fn search_file_for_patterns(
     } else if flags.count.is_enabled() {
         print_count_results(&results);
     }
-    let total_count = results.len();
-    Ok(total_count)
+
+    Ok(!results.is_empty())
 }
 
 pub fn process_line(

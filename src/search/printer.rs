@@ -72,18 +72,21 @@ pub fn format_count_result(file: &str, count: usize) -> String {
 
 // Highlight matches in a line by coloring matched text in red
 pub fn highlight_matches(line: &str, matches: &[(usize, usize)]) -> String {
-    let mut highlighted = String::with_capacity(line.len() + matches.len() * 10);
+    let mut output = String::new();
     let mut last_end = 0;
 
-    // Iterate through each match and append highlighted text
     for (start, end) in matches {
         // Append the text before the match
-        highlighted.push_str(&line[last_end..*start]);
+        output.push_str(&line[last_end..*start]);
+
         // Append the matched text in red
-        highlighted.push_str(&line[*start..*end].red().to_string());
+        let matched_text = &line[*start..*end];
+        output.push_str(&matched_text.red().to_string());
+
         last_end = *end;
     }
 
-    highlighted.push_str(&line[last_end..]); // Append the remaining text
-    highlighted
+    // Append the text after the last match
+    output.push_str(&line[last_end..]);
+    output
 }

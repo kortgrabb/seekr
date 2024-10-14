@@ -1,15 +1,17 @@
 use clap::{Arg, ArgAction, ArgMatches};
 
-// allw more than 3 boolean flags clippy
+// allow more than 3 boolean flags clippy
 
 #[derive(Debug, Default)]
 pub struct Flags {
     pub count: OptionState,
     pub show_lines: OptionState,
-    pub show_names: OptionState,
+    pub no_file_names: OptionState, // TODO
     pub ignore_case: OptionState,
     pub invert_match: OptionState,
     pub hidden: OptionState,
+    pub list_files: OptionState,
+    pub sequential: OptionState,
 }
 
 #[derive(Debug, Default)]
@@ -34,6 +36,12 @@ impl OptionState {
 }
 
 macro_rules! flag {
+    ($name:literal, $long:literal, $help:expr) => {
+        Arg::new($name)
+            .long($long)
+            .help($help)
+            .action(ArgAction::SetTrue)
+    };
     ($name:literal, $short:literal, $long:literal, $help:expr) => {
         Arg::new($name)
             .short($short)
@@ -46,6 +54,11 @@ macro_rules! flag {
 impl Flags {
     pub fn args() -> Vec<Arg> {
         vec![
+            flag!(
+                "no-file-names",
+                "no-file-names",
+                "Only show file names with matches"
+            ),
             flag!(
                 "recursive",
                 'r',
@@ -60,7 +73,7 @@ impl Flags {
                 "ignore-case",
                 "Ignore case when searching"
             ),
-            flag!("names", 'l', "names", "Only show file names with matches"),
+            flag!("list", 'l', "list", "Only show file names with matches"),
             flag!(
                 "invert-match",
                 'v',
@@ -73,11 +86,22 @@ impl Flags {
                 "hidden",
                 "Search hidden files and directories"
             ),
+            flag!(
+                "sequential",
+                's',
+                "sequential",
+                "Search files sequentially instead of in parallel"
+            ),
         ]
     }
 
     pub fn from_matches(matches: &ArgMatches) -> Self {
         Self {
+            no_file_names: if matches.get_flag("no-file-names") {
+                OptionState::Enabled
+            } else {
+                OptionState::Disabled
+            },
             count: if matches.get_flag("count") {
                 OptionState::Enabled
             } else {
@@ -88,12 +112,8 @@ impl Flags {
             } else {
                 OptionState::Disabled
             },
+
             ignore_case: if matches.get_flag("ignore-case") {
-                OptionState::Enabled
-            } else {
-                OptionState::Disabled
-            },
-            show_names: if matches.get_flag("names") {
                 OptionState::Enabled
             } else {
                 OptionState::Disabled
@@ -104,6 +124,16 @@ impl Flags {
                 OptionState::Disabled
             },
             hidden: if matches.get_flag("hidden") {
+                OptionState::Enabled
+            } else {
+                OptionState::Disabled
+            },
+            list_files: if matches.get_flag("list") {
+                OptionState::Enabled
+            } else {
+                OptionState::Disabled
+            },
+            sequential: if matches.get_flag("sequential") {
                 OptionState::Enabled
             } else {
                 OptionState::Disabled
