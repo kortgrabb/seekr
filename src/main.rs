@@ -25,20 +25,13 @@ fn main() -> ExitCode {
 }
 
 fn run() -> Result<ExitCode, Box<dyn std::error::Error>> {
-    // Parse command line arguments to get pattern, files, and flags.
     let args = parse_args();
-    let flags = &args.flags;
-
-    let needle = &args.needle;
-    let files = &args.paths;
-
-    let matched = AtomicBool::new(false);
 
     // Determine if multi-threaded search is needed based on flags.
-    let result = if flags.sequential.is_enabled() {
-        search_with(needle, files, &args, &matched, search_files)?
+    let result = if args.flags.sequential.is_enabled() {
+        search_with(args, search_files)?
     } else {
-        search_with(needle, files, &args, &matched, search_files_parallel)?
+        search_with(args, search_files_parallel)?
     };
 
     // Check if any matches were found.
@@ -47,16 +40,12 @@ fn run() -> Result<ExitCode, Box<dyn std::error::Error>> {
     } else {
         Ok(ExitCode::from(1)) // No matches found
     }
+
+    // TODO: add modes
 }
 
 // Higher-level function to orchestrate search
-fn search_with<F>(
-    needle: &str,
-    files: &[String],
-    args: &Args,
-    matched: &AtomicBool,
-    search_fn: F,
-) -> Result<SearchResult, Box<dyn std::error::Error>>
+fn search_with<F>(args: Args, search_fn: F) -> Result<SearchResult, Box<dyn std::error::Error>>
 where
     F: Fn(
         &str,
@@ -66,8 +55,14 @@ where
         &AtomicBool,
     ) -> Result<SearchResult, Box<dyn std::error::Error>>,
 {
-    let walker = args.walk_builder();
-    let result = search_fn(needle, files, &args.flags, &walker, matched)?;
+    let matched = AtomicBool::new(false);
+    let result = search_fn(
+        &args.needle,
+        &args.paths,
+        &args.flags,
+        &args.walk_builder(),
+        &matched,
+    )?;
 
     Ok(result)
 }
